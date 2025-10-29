@@ -3,13 +3,14 @@
 % Niel Theron
 % 12-06-2025
 %==========================================================================
-
+function System(app)
 %% Simulation Parameters ==================================================
 
 % Simulation Parameters
 st      = evalin("base","st");
 dt_p    = evalin("base","dt_p");
 n_s     = round(st/dt_p);
+enable_SaveImages = evalin("base","enable_SaveImages");
 %---
 
 % State Parameters
@@ -153,7 +154,7 @@ f_d = zeros(2,n_f,n_s);                 % Feature Pixel Locations for distorted 
 
 % Initialsie LineOfSight Varaibles
 n_ET     = 3;                           % Number of measurements
-R_ET     = noise_ET^2*eye(3);         % Measurement Noise Covariance Matrix
+R_ET     = (noise_ET/1000)^2*eye(3);         % Measurement Noise Covariance Matrix
 z_ET     = zeros(n_ET,n_f,n_s);         % Earth tracker measurement (km)
 y_ET     = zeros(n_ET,n_f,n_s);         % Estimated Earth tracker measurement (km)
 K_ET     = zeros(n_x,n_ET,n_f,n_s);     % Earth tracker Kalman Gain (km)
@@ -172,41 +173,47 @@ zhat_ET = zeros(3,n_f,n_s);
 n_GYR       = 3;                                % Number of measurements
 R_GYR       = deg2rad(noise_GYR)^2*eye(3);      % Gyroscope sensor noise matrix
 z_GYR       = zeros(n_GYR,n_s);                 % Gyroscope measurement
-y_GYR       = zeros(n_GYR,n_s);                 % Gyroscope estimated measurement
+zhat_GYR    = zeros(n_GYR,n_s);                 % Gyroscope estimated measurement
+y_GYR       = zeros(n_GYR,n_s);                 % Gyroscope innovation
 K_GYR       = zeros(n_x,n_GYR,n_s);             % Gyroscope Kalman Gain
 drift_GYR   = zeros(n_GYR,1);                   % Gyroscope drift buffer
 %---
 
 % GPS
 n_GPS       = 3;                                % Number of measurements
-R_GPS = diag([(noise_GPS/111)^2;(noise_GPS/111)^2;(noise_GPS/1000)^2]);
+R_GPS       = diag([(noise_GPS/111)^2;(noise_GPS/111)^2;(noise_GPS/1000)^2]);
 z_GPS       = zeros(n_GPS,n_s);                 % GPS measurement
-y_GPS       = zeros(n_GPS,n_s);                 % GPS estimated measurement
+zhat_GPS    = zeros(n_GPS,n_s);                 % GPS estimated measurement
+y_GPS       = zeros(n_GPS,n_s);                 % GPS innovation
 K_GPS       = zeros(n_x,n_GPS,n_s);             % GPS Kalman Gain
 drift_GPS   = zeros(n_GPS,1);                   % GPS drift buffer
 %----
 
 % Star Tracker
 n_ST        = 3;                                % Number of measurements
-R_ST        = deg2rad(noise_ST)^2*eye(n_ST);    % Star tracker noise matrix (rad)
+R_ST        = deg2rad(noise_ST/3600)^2 * eye(3);    % Star tracker noise matrix (rad)
 z_ST        = zeros(n_ST,20,n_s);                  % Star tracker measurements
-y_ST        = zeros(n_ST,n_s);                  % Star tracker estimated measurements
-K_ST        = zeros(n_x,n_ST,n_s);              % Star tracker Kalman Gain
+zhat_ST     = zeros(n_ST,20,n_s);                  % Star tracker estimated measurements
+y_ST        = zeros(n_ST,20,n_s);                  % Star tracker innovation
+K_ST        = zeros(n_x,n_ST,20,n_s);              % Star tracker Kalman Gain
 %---
 
 % Magnetometer
 n_MAG       = 3;                                % Number of measurements
-R_MAG       = noise_MAG^2*eye(n_MAG);           % Magnetometer noise matrix (rad)
+R_MAG       = noise_MAG^2*eye(n_MAG);           % Magnetometer noise matrix
 z_MAG       = zeros(n_MAG,n_s);                 % Magnetometer measurements
-y_MAG       = zeros(n_MAG,n_s);                 % Magnetometer estimated measurements
+zhat_MAG    = zeros(n_MAG,n_s);                 % Magnetometer estimated measurements
+y_MAG       = zeros(n_MAG,n_s);                 % Magnetometer innovation
 K_MAG       = zeros(n_x,n_MAG,n_s);             % Magnetimeter Kalman Gain
 %---
 
 % Coarse Sun Sensor
 n_CSS       = 3;                                % Number of measurements
-R_CSS       = noise_CSS^2*eye(n_CSS);           % Coarse sun sensor noise matrix (rad)
+CSS_angular_uncertainty = noise_CSS * 1.2;  % ~6° (conservative estimate)
+R_CSS       = deg2rad(CSS_angular_uncertainty)^2 * eye(3);
 z_CSS       = zeros(n_CSS,n_s);                 % Coarse sun sensor measurement
-y_CSS       = zeros(n_CSS,n_s);                 % Coarse sun sensor estimated measurement
+zhat_CSS    = zeros(n_CSS,n_s);                 % Coarse sun sensor estimated measurement
+y_CSS       = zeros(n_CSS,n_s);                 % Coarse sun sensor innovation
 K_CSS       = zeros(n_x,n_CSS,n_s);             % Coarse sun sensor Kalman Gain
 %---
 
@@ -220,17 +227,12 @@ d = uiprogressdlg(fig, 'Title','Running Simulation', ...
 startTime = tic;
 %---
 
-% Global Stop
-global STOP_SIMULATION;
-STOP_SIMULATION = false;
-%---
-
-
 %==========================================================================
 %% Run Simulation =========================================================
 for r = 1:n_s-1
+    drawnow; 
     % Stop simulation -----------------------------------------------------
-    if STOP_SIMULATION
+    if ~app.SimulationRunning
         fprintf('Simulation stopped by user at sample %d\n', r);
         break;
     end
@@ -244,23 +246,29 @@ for r = 1:n_s-1
     if mod(t,dt_ET) == 0 && enable_ET
 
         % Apply Lens Distortion -------------------------------------------
-        distortedImage(:,:,:,r) = LensDistortion(satelliteImage(:,:,:,r), ...
+        distortedImage = LensDistortion(satelliteImage(:,:,:,r), ...
                 radialDisPar, tangentialDisPar, chromaticDisPar, ...
                 radial_enable, tangential_enable, chromatic_enable);
-        SaveSatelliteImages(satelliteImage(:,:,:,r),r);
-        SaveDistortedImages(distortedImage(:,:,:,r),r);
         %-------------------------------------------------------------------
 
         % Feature Detection ---------------------------------------------------
-        [f_m(:,:,r), grayImage] = FeatureDetection(distortedImage(:,:,:,r), n_f,FD);
+        [f_m(:,:,r), grayImage] = FeatureDetection(distortedImage, n_f,FD);
         [f_d(:,:,r), ~]         = FeatureDetection(satelliteImage(:,:,:,r), n_f,FD);
-        SaveFeatureImages(grayImage, f_m(:,:,r),r);
         %----------------------------------------------------------------------
         
         % Generate Catalogue ----------------------------------------
         [catalogue_geo(:,:,r), catalogue_eci(:,:,r)] = Catalogue(f_d(:,:,r), x_true(:,r), ...
             focalLength_cam, pixelSize_cam, alpha_m, Ix, Iy, we_p, t);
         %------------------------------------------------------------
+
+        % Save Images ----------------------------------------------
+        if enable_SaveImages
+            SaveSatelliteImages(satelliteImage(:,:,:,r),r);
+            SaveDistortedImages(distortedImage,r);
+            SaveFeatureImages(grayImage, f_m(:,:,r),r);
+        end
+        %=-----------------------------------------------------------
+
         
         % Create Sensor Measurements 
         z_ET(:,:,r) = EarthTracker(f_m(:,:,r),imgWidth_ET,imgHeight_ET,focalLength_ET, pixelSize_ET,alpha_ET, noise_ET);
@@ -294,7 +302,9 @@ for r = 1:n_s-1
 
     % Estimated Video -----------------------------------------------------
     if mod(t,dt_ET) == 0 && enable_ET
-        SaveEstimatedImage(grayImage,z_ET(:,:,r),zhat_ET(:,:,r),Ix,Iy,pixelSize_cam,focalLength_cam,r)
+        if enable_SaveImages
+            SaveEstimatedImage(grayImage,z_ET(:,:,r),zhat_ET(:,:,r),Ix,Iy,pixelSize_cam,focalLength_cam,r);
+        end
     end
     %----------------------------------------------------------------------
 
@@ -306,11 +316,11 @@ for r = 1:n_s-1
     d.Value = progress;
     d.Message = sprintf('Elapsed: %.2fs | %d%% | Est. remaining: %.2fs | Sample: %d | Footage Time: %.2fs | Time per sample: %.2fs', ...
         elapsedTime, round(progress*100), estRemaining,r+1,r*dt_ET,elapsedTime/r);
+    drawnow;  % ← ADD THIS! (Process UI events and update progress bar)
     %----------------------------------------------------------------------
 
-
-    % Stop Simulation -----------------------------------------------------
-    if STOP_SIMULATION
+    % Stop Simulation (final check) --------------------------------------
+    if ~app.SimulationRunning
         fprintf('Simulation stopped by user at sample %d\n', r+1);
         break;
     end
@@ -319,6 +329,9 @@ end
 
 %==========================================================================
 %% Save Variables (whether completed or stopped) =========================
+
+% Check if stopped BEFORE modifying anything
+wasStopped = ~app.SimulationRunning;
 
 % Trim arrays to actual size (remove unused pre-allocated space)
 actual_samples = r + 1;  % +1 because we have initial condition
@@ -337,34 +350,37 @@ f_d             = f_d(:, :, 1:actual_samples);
 K_ET            = K_ET(:, :, :, 1:actual_samples);
 %---
 
-%% Update progress dialog based on completion status
-if STOP_SIMULATION
+%% Update progress dialog and show final status
+if wasStopped
+    % Simulation was stopped by user
     d.Value = r / (n_s-1);
-    d.Message = sprintf('✓ STOPPED BY USER ✓ | Elapsed: %.2fs | %d/%d samples completed | Data saved', ...
-        toc(startTime), actual_samples, n_s);
-    d.Title = 'Simulation Stopped - Data Saved - Click X to close';
-    fprintf('Simulation stopped by user. Data saved (%d samples)\n', actual_samples);
+    d.Message = sprintf('Stopped - Saving data... %d/%d samples', actual_samples, n_s);
+    drawnow;
+    
+    % Console output
+    fprintf('\n╔════════════════════════════════════════╗\n');
+    fprintf('║   SIMULATION STOPPED BY USER          ║\n');
+    fprintf('╚════════════════════════════════════════╝\n');
+    fprintf('  Samples completed: %d/%d\n', actual_samples, n_s);
+    fprintf('  Elapsed time: %.2fs\n', toc(startTime));
+    fprintf('  Data saved successfully.\n\n');
+    
 else
+    % Simulation completed normally
     d.Value = 1;
-    d.Message = sprintf('✓ SIMULATION COMPLETE ✓ | Total: %.2fs | %d samples processed | Final footage time: %.2fs | Avg time per sample: %.2fs', ...
-        toc(startTime), actual_samples, (actual_samples-1)*dt_ET, toc(startTime)/actual_samples);
-    d.Title = 'Simulation Complete - Click X to close';
-    fprintf('Simulation completed successfully! (%d samples)\n', actual_samples);
+    d.Message = sprintf('Complete - Saving results... %d samples', actual_samples);
+    drawnow;
+    
+    % Console output
+    fprintf('\n╔════════════════════════════════════════╗\n');
+    fprintf('║   SIMULATION COMPLETE                  ║\n');
+    fprintf('╚════════════════════════════════════════╝\n');
+    fprintf('  Total samples: %d\n', actual_samples);
+    fprintf('  Total time: %.2fs\n', toc(startTime));
+    fprintf('  Avg time/sample: %.3fs\n', toc(startTime)/actual_samples);
+    fprintf('  Footage time: %.2fs\n\n', (actual_samples-1)*dt_ET);
 end
 %---
-
-% Keep references to prevent garbage collection
-assignin('base', 'progress_dialog', d);
-assignin('base', 'progress_figure', fig);
-%---
-
-% Reset stop flag
-STOP_SIMULATION = false;
-%---
-
-%% Clean Processes ========================================================
-delete('temp_image.png')
-%==========================================================================
 
 %% Save Variables to Base Workspace ======================================
 
@@ -373,7 +389,7 @@ assignin('base', 'x_EKF', x_EKF);
 assignin('base', 'P_EKF', P_EKF);
 assignin('base', 'Q_EKF',Q_EKF);
 assignin('base', 'actual_samples', actual_samples);
-assignin('base', 'n_s', actual_samples);
+assignin('base', 'n_s', n_s);
 %---
 
 % Save measurement data
@@ -384,6 +400,17 @@ assignin('base', 'z_ST', z_ST);
 assignin('base', 'z_CSS', z_CSS);
 assignin('base', 'z_MAG', z_MAG);
 assignin('base', 'zhat_ET', zhat_ET);
+assignin('base', 'zhat_ST', zhat_ST);
+assignin('base', 'zhat_MAG', zhat_MAG);
+assignin('base', 'zhat_CSS', zhat_CSS);
+assignin('base', 'zhat_GPS', zhat_GPS);
+assignin('base', 'zhat_GYR', zhat_GYR);
+assignin('base', 'y_ET', y_ET);
+assignin('base', 'y_GPS', y_GPS);
+assignin('base', 'y_GYR', y_GYR);
+assignin('base', 'y_ST', y_ST);
+assignin('base', 'y_CSS', y_CSS);
+assignin('base', 'y_MAG', y_MAG);
 %---
 
 % Save other useful variables
@@ -398,6 +425,8 @@ assignin('base', 'K_ET', K_ET);
 assignin('base', 'K_GPS', K_GPS);
 assignin('base', 'K_GYR', K_GYR);
 assignin('base', 'K_ST', K_ST);
+assignin('base', 'K_MAG', K_MAG);
+assignin('base', 'K_CSS', K_CSS);
 %---
 
 % Save noise matrices
@@ -410,3 +439,44 @@ assignin('base', 'R_MAG', R_MAG);
 %---
 
 fprintf('Simulation variables saved to base workspace.\n');
+
+%% Clean up and show completion dialog
+% Update final message on progress dialog
+if wasStopped
+    d.Message = sprintf('✓ Stopped - Data saved (%d/%d samples)', actual_samples, n_s);
+else
+    d.Message = sprintf('✓ Complete - All data saved (%d samples)', actual_samples);
+end
+drawnow;
+
+% Brief pause to show final message
+pause(1.5);
+
+% Close progress dialog
+close(d);
+close(fig);
+
+%% Update app UI state
+if isvalid(app)
+    % Reset app state
+    app.RunSimulationButton.Enable = 'on';
+    app.StopSimulationButton.Enable = 'off';
+    app.SimulationRunning = false;
+    
+    % Show completion alert based on what actually happened
+    if wasStopped
+        uialert(app.UIFigure, ...
+            sprintf('Simulation stopped by user.\n\n%d/%d samples completed\nElapsed time: %.2fs\n\nAll data has been saved.', ...
+                    actual_samples, n_s, toc(startTime)), ...
+            'Simulation Stopped', ...
+            'Icon', 'warning');
+    else  % Completed normally
+        uialert(app.UIFigure, ...
+            sprintf('Simulation completed successfully!\n\n%d samples processed\nTotal time: %.2fs\nAverage time per sample: %.3fs\n\nAll data has been saved.', ...
+                    actual_samples, toc(startTime), toc(startTime)/actual_samples), ...
+            'Simulation Complete', ...
+            'Icon', 'success');
+    end
+end
+
+end

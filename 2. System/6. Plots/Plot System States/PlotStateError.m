@@ -1,13 +1,13 @@
 function PlotStateError(xA,x_est,dt)
 figure('Name','Position Error')
-n = (0:size(xA,2)-1)*dt;
+n = (0:size(x_est,2)-1)*dt;
 
 tiledlayout(2,2)
 nexttile
 hold on
-stairs(n,(xA(1,:)-x_est(1,:))*1000)
-stairs(n,(xA(2,:)-x_est(2,:))*1000)
-stairs(n,(xA(3,:)-x_est(3,:))*1000)
+stairs(n,(xA(1,1:length(n))-x_est(1,1:length(n)))*1000)
+stairs(n,(xA(2,1:length(n))-x_est(2,1:length(n)))*1000)
+stairs(n,(xA(3,1:length(n))-x_est(3,1:length(n)))*1000)
 title('Position Error')
 xlabel('Time (s)')
 ylabel("Position (ECI) (m)")
@@ -16,9 +16,9 @@ hold off
 
 nexttile
 hold on
-stairs(n,(xA(4,:)-x_est(4,:))*1000)
-stairs(n,(xA(5,:)-x_est(5,:))*1000)
-stairs(n,(xA(6,:)-x_est(6,:))*1000)
+stairs(n,(xA(4,1:length(n))-x_est(4,1:length(n)))*1000)
+stairs(n,(xA(5,1:length(n))-x_est(5,1:length(n)))*1000)
+stairs(n,(xA(6,1:length(n))-x_est(6,1:length(n)))*1000)
 title('Velocity Error')
 xlabel('Time (s)')
 ylabel("Velocity (ECI) (m/s)")
@@ -27,10 +27,10 @@ hold off
 
 nexttile
 hold on
-stairs(n,(xA(7,:)-x_est(7,:)))
-stairs(n,(xA(8,:)-x_est(8,:)))
-stairs(n,(xA(9,:)-x_est(9,:)))
-stairs(n,(xA(10,:)-x_est(10,:)))
+stairs(n,(xA(7,1:length(n))-x_est(7,1:length(n))))
+stairs(n,(xA(8,1:length(n))-x_est(8,1:length(n))))
+stairs(n,(xA(9,1:length(n))-x_est(9,1:length(n))))
+stairs(n,(xA(10,1:length(n))-x_est(10,1:length(n))))
 title('Attitude Error')
 xlabel('Time (s)')
 ylabel("Attitude")
@@ -52,9 +52,9 @@ hold off
 
 nexttile
 hold on
-stairs(n,rad2deg(xA(11,:)-x_est(11,:)))
-stairs(n,rad2deg(xA(12,:)-x_est(12,:)))
-stairs(n,rad2deg(xA(13,:)-x_est(13,:)))
+stairs(n,rad2deg(xA(11,1:length(n))-x_est(11,1:length(n))))
+stairs(n,rad2deg(xA(12,1:length(n))-x_est(12,1:length(n))))
+stairs(n,rad2deg(xA(13,1:length(n))-x_est(13,1:length(n))))
 title('Angular Velocity Error')
 xlabel('Time (s)')
 ylabel("Angular Velocity (BOD) (deg/s)")

@@ -1,4 +1,7 @@
-function PlotCovariance(xA,x_est,Pp,n_s)
+function PlotCovariance(xA,x_est,Pp)
+
+n_s = (0:size(x_est,2)-1)*dt;
+
 
 figure(Name="Position plot")
 for i = 1:3

@@ -1,7 +1,7 @@
-function PlotState(xA,dt)
+function PlotState(xA,x_est,dt)
 figure('Name','Real States')
 
-n = (0:size(xA,2)-1)*dt;
+n = (0:size(x_est,2)-1)*dt;
 tiledlayout(2,2)
 
 nexttile
