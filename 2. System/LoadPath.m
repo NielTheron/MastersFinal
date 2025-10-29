@@ -40,6 +40,7 @@ addpath("6. Plots\Plot Sensors\")
 addpath("6. Plots\Plot Images\")
 addpath("6. Plots\Plot System States\")
 addpath("6. Plots\Plot Visual\")
+addpath("6. Plots\Plot Seperate\")
 
 addpath("7. Datasets\")
 end

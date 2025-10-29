@@ -33,6 +33,10 @@ R_O2C = eul2rotm(deg2rad([yaw, pit, rol]),"ZYX") * R_O2C_D;
 R_O2B = R_C2B * R_O2C;
 q_O2B = rotm2quat(R_O2B).';
 
+if q_O2B(1) < 0
+    q_O2B = -q_O2B;
+end
+
 %=== Initialise Angular velocity =========================================
 w_O2B_B = R_C2B * deg2rad([wx; wy; wz]);
 

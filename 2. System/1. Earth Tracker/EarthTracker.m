@@ -3,7 +3,7 @@
 % 09-05-2025
 %=======================================================================
 
-function z_ET = EarthTracker(features,Ix,Iy,focalLength,pixelSize,alpha,noise_ET)
+function z_ET = EarthTracker(features,Ix,Iy,focalLength,pixelSize,alpha)
 
 
 %=== T_P2M =============================================================
@@ -45,10 +45,8 @@ z_ET = zeros(3, numFeatures);
 
 for i = 1:numFeatures
     f_P = [features(:,i); 1; 1]; % Homogeneous pixel vector;
-    f_I = T_C2B * T_M2C * T_P2M * f_P;
-    % noise_ET = noise_ET.*randn(3,1);
-    z_ET(:,i) = f_I(1:3);% + noise_ET/1000;
-end
+    f_B = T_C2B * T_M2C * T_P2M * f_P;
+    z_ET(:,i) = f_B(1:3);
 %---
 
 end

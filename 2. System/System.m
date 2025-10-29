@@ -135,7 +135,7 @@ P_EKF = zeros(n_x,n_x,n_s);         % Initialise filter covariance matrix
     lat_f, lon_f, alt_f, ...
     rotx_f, roty_f, rotz_f, ...
     wx_f, wy_f, wz_f, ...
-    Mu_f, we_f, dt_f, inc_f);
+    Mu_f, we_f, 0, inc_f);
 %---
 
 % Initialize Filter
@@ -257,8 +257,10 @@ for r = 1:n_s-1
         %----------------------------------------------------------------------
         
         % Generate Catalogue ----------------------------------------
-        [catalogue_geo(:,:,r), catalogue_eci(:,:,r)] = Catalogue(f_d(:,:,r), x_true(:,r), ...
+        catalogue_geo(:,:,r) = Catalogue(f_d(:,:,r), x_true(:,r), ...
             focalLength_cam, pixelSize_cam, alpha_m, Ix, Iy, we_p, t);
+
+        catalogue_eci(:,:,r) = LLA2ECI(catalogue_lla, we_p, t);
         %------------------------------------------------------------
 
         % Save Images ----------------------------------------------
@@ -271,7 +273,7 @@ for r = 1:n_s-1
 
         
         % Create Sensor Measurements 
-        z_ET(:,:,r) = EarthTracker(f_m(:,:,r),imgWidth_ET,imgHeight_ET,focalLength_ET, pixelSize_ET,alpha_ET, noise_ET);
+        z_ET(:,:,r) = EarthTracker(f_m(:,:,r),imgWidth_ET,imgHeight_ET,focalLength_ET, pixelSize_ET,alpha_ET);
     else
         z_ET(:,:,r) = zeros(n_ET,n_f);
     end

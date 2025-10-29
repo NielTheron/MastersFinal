@@ -1,10 +1,6 @@
 %==========================================================================
 % Niel Theron
 % 17-07-2025
-%
-% Rewritten by Google's Gemini for Memory Efficiency (16-10-2025)
-% FINAL ROBUST VERSION: This version avoids matfile limitations by saving
-% large arrays as separate, top-level variables.
 %==========================================================================
 
 %% Load Functions =========================================================
@@ -19,7 +15,7 @@ CleanFolders;
 %==========================================================================
 
 %% Simulation Paramters ===================================================
-st      = 140;       % Simulation time (s)
+st      = 120;       % Simulation time (s)
 dt_p    = 1/30;      % Sample rate (s)
 n_s     = round(st/dt_p); % Number of samples                      
 %---
@@ -44,11 +40,11 @@ we_p = 7.292e-5;                    % Rotational speed of earth (rad/s)
 lat_p       = -33.90;                   % Lattitude (deg)
 lon_p       = 18.41;                    % Longitude (deg)
 alt_p       = 500;                      % Altitude (km)
-rotx_p      = 45;                        % Satellite roll  Offset B/O (deg)
+rotx_p      = 0;                        % Satellite roll  Offset B/O (deg)
 roty_p      = 0;                        % Satellite Pitch Offset B/O (deg)
 rotz_p      = 0;                        % Satellite Yaw   Offset B/O (deg)
-wx_p        = 0;                        % Satellite Roll  rate B/O (deg/s)
-wy_p        = 0.0011;                   % Satellite Pitch rate B/O (deg/s) 
+wx_p        = 2;                        % Satellite Roll  rate B/O (deg/s)
+wy_p        = 0;                        % Satellite Pitch rate B/O (deg/s) 
 wz_p        = 0;                        % Satellite Yaw rate B/O (deg/s)
 inc_p       = -33.90;                   % Initial Inclination (deg)
 %---
@@ -59,7 +55,7 @@ InitialiseOrbit( ...
 lat_p, lon_p, alt_p, ...
 rotx_p, roty_p, rotz_p, ...
 wx_p, wy_p, wz_p, ...
-Mu_p, we_p, dt_p, inc_p);
+Mu_p, we_p, 0, inc_p);
 %---
 
 % Set initial true state
@@ -84,10 +80,9 @@ sourceMapFile       = 'CapeStrip10.tif';     % The high-res GeoTIFF file
 % Define the output file path
 timestamp = string(datetime('now', 'Format', 'yyyyMMdd_HHmmss'));
 filename = sprintf('Dataset_%s.mat', timestamp);
-filepath = fullfile('C:\Users\Niel\Desktop\1. Masters\1. Satellite\4. Datasets', filename);
+filepath = fullfile('C:\Users\Niel\Desktop\Masters\1. Satellite\4. Datasets', filename);
 fprintf('Creating dataset file at: %s\n', filepath);
 
-% ✅ **NEW STRUCTURE**: Create a struct for metadata ONLY.
 metadata = struct();
 metadata.simulationTime = st;
 metadata.sampleTime = dt_p;
@@ -120,12 +115,15 @@ save(filepath, 'metadata', '-v7.3');
 m = matfile(filepath, 'Writable', true);
 
 % 3. Pre-allocate the large arrays as TOP-LEVEL variables in the file.
-numImagesToGenerate = n_s - 1;
 m.poses = zeros(n_x, n_s);
-m.images = zeros(imgHeight_cam, imgWidth_cam, 3, numImagesToGenerate, 'uint8');
+m.images = zeros(imgHeight_cam, imgWidth_cam, 3, n_s, 'uint8');
 
 % Write the initial pose
 m.poses(:,1) = x_true(:,1);
+
+% Write Time varaible
+time = (0:n_s-1) * dt_p;
+m.time = time;
 
 % Progress bar setup
 fig = uifigure('Name','Simulation Progress');
@@ -134,13 +132,29 @@ d = uiprogressdlg(fig, 'Title','Running Simulation & Generating Images', ...
 startTime = tic;
 %==========================================================================
 
+currentImage = GenerateSatelliteImage_RayTrace( ...
+    x_true(1:3,r), ...      % r_I (Position)
+    x_true(4:6,r), ...      % v_I (Velocity)
+    x_true(7:10,r), ...     % q_O2B (Quaternion)
+    imgWidth_cam, ...
+    imgHeight_cam, ...
+    focalLength_cam, ...
+    pixelSize_cam, ...
+    sourceMapFile. ...
+    t);
+m.images(:,:,:,1) = currentImage;
+SaveSatelliteImages(currentImage,1);
+
+
 %% Run Simulation & Save Directly to MAT-File =============================
-for r = 1:numImagesToGenerate
+for r = 2:n_s
+
+    % Time ----------------------------------------------------------------
+    t = r*dt_p;
+    %----------------------------------------------------------------------
 
     % Plant Propagation (in local memory) ---------------------------------
     x_true(:,r+1) = Plant(x_true(:,r), dt_p, I_p, Mu_p, Re_p, J2_p);
-    
-    % ✅ **CORRECT SYNTAX**: Write pose slice to the top-level 'poses' variable
     m.poses(:,r+1) = x_true(:,r+1);
     %----------------------------------------------------------------------
 
@@ -153,9 +167,9 @@ for r = 1:numImagesToGenerate
         imgHeight_cam, ...
         focalLength_cam, ...
         pixelSize_cam, ...
-        sourceMapFile);
+        sourceMapFile. ...
+        t);
     
-    % ✅ **CORRECT SYNTAX**: Write image slice to the top-level 'images' variable
     m.images(:,:,:,r) = currentImage;
     SaveSatelliteImages(currentImage,r);
     % ----------------------------------------------------------------------

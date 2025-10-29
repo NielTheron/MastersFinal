@@ -3,7 +3,7 @@
 % 04-09-2025
 %========================================================================
 
-function [catalogueLLA, catalogueECI] = Catalogue(features, x_true, focalLength, pixelSize, alpha, Ix, Iy, we_p, t)
+function catalogueLLA = Catalogue(features, x_true, focalLength, pixelSize, alpha, Ix, Iy, we_p, t)
 
 %=== T_P2M =============================================================
 cx = Ix/2;
@@ -68,61 +68,68 @@ T_I2R = [cos(theta)    -sin(theta)    0 0;
          0              0             1 0;
          0              0             0 1];
 
-%=== Catalogue Vector ===================================================
+%=== Ray-Ellipsoid Intersection =========================================
 
 numFeatures = size(features, 2);
-catalogueECI = zeros(3, numFeatures);
-catalogueRay = zeros(4, numFeatures);
-
-for i = 1:numFeatures
-    f_P = [features(:,i); 1; 1]; % Homogeneous pixel vector
-    catalogueRay(:,i) = T_O2I_R * T_B2O * T_C2B * T_M2C * T_P2M * f_P;
-    f_I = T_O2I * T_B2O * T_C2B * T_M2C * T_P2M * f_P;
-    catalogueECI(:,i) = f_I(1:3);
-end
-
-%====================================================================
-
-%=== Convert all features to LLA ========================================
 catalogueLLA = zeros(3, numFeatures);
-a = 6378.137;  % WGS84 semi-major axis (km)
-b = 6356.752;  % WGS84 semi-minor axis (km)
-r_I = x_true(1:3);  % Satellite position in ECI
+
+% WGS84 ellipsoid parameters
+a = 6378.137;  % semi-major axis (km)
+b = 6356.752;  % semi-minor axis (km)
+
+% Satellite position in ECI
+r_I = x_true(1:3);
 
 for i = 1:numFeatures
-    ray_eci = catalogueRay(1:3,i) / norm(catalogueRay(1:3,i)); % normalized direction
+    % Convert pixel to direction vector in ECI
+    f_P = [features(:,i); 1; 1];
+    f_I = T_O2I_R * T_B2O * T_C2B * T_M2C * T_P2M * f_P;
+    ray_eci = f_I(1:3) / norm(f_I(1:3));  % Normalize direction
     
-    % Solve ray-ellipsoid intersection
+    % Ray parameters
     dx = ray_eci(1); dy = ray_eci(2); dz = ray_eci(3);
     x0 = r_I(1); y0 = r_I(2); z0 = r_I(3);
-
+    
+    % Quadratic equation coefficients for ray-ellipsoid intersection
     A = (dx^2 + dy^2)/a^2 + (dz^2)/b^2;
     B = 2*((x0*dx + y0*dy)/a^2 + (z0*dz)/b^2);
     C = (x0^2 + y0^2)/a^2 + (z0^2)/b^2 - 1;
-
+    
     discriminant = B^2 - 4*A*C;
+    
+    % Check for intersection
     if discriminant < 0
-        warning("No Earth intersection for feature %d", i);
+        warning("Catalogue: Feature %d has no Earth intersection", i);
+        catalogueLLA(:,i) = NaN(3,1);
         continue
     end
-
+    
+    % Solve for intersection points
     t1 = (-B - sqrt(discriminant)) / (2*A);
     t2 = (-B + sqrt(discriminant)) / (2*A);
-    t_intersect = min([t1, t2, inf]);
-
-    if t_intersect <= 0
-        warning("Feature %d intersection is behind satellite", i);
+    
+    % Select closest positive intersection (forward along ray)
+    valid_t = [t1, t2];
+    valid_t = valid_t(valid_t > 0);
+    
+    if isempty(valid_t)
+        warning("Catalogue: Feature %d intersection is behind satellite", i);
+        catalogueLLA(:,i) = NaN(3,1);
         continue
     end
-
+    
+    t_intersect = min(valid_t);
+    
+    % Compute intersection point in ECI
     P_eci = r_I + t_intersect * ray_eci;
-
-    % Convert to ECEF
+    
+    % Convert ECI to ECEF
     P_ecef = T_I2R * [P_eci; 1];
-
-    % Convert to geodetic
+    
+    % Convert ECEF to geodetic coordinates
     [lat, lon, alt] = ecef2geodetic(wgs84Ellipsoid('km'), ...
                                     P_ecef(1), P_ecef(2), P_ecef(3));
+    
     catalogueLLA(:,i) = [lat; lon; alt];
 end
 

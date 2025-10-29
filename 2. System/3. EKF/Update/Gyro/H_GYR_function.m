@@ -9,7 +9,7 @@
 function zhat_GYR = H_GYR_function(x_est, Mu)
 
 % Calculate WO/I (orbital angular velocity in orbital frame)
-w_I2O_in_O = sqrt(Mu/(norm(x_est(1:3))^3)) * [0; 1; 0];
+w_I2O_in_O = sqrt(Mu/(norm(x_est(1:3))^3)) * [0; -1; 0];
 
 % Extract individual quaternion components for clarity
 qs = x_est(7);  % Scalar component
