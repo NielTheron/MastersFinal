@@ -1,14 +1,17 @@
+%==========================================================================
+% Niel Theron
+% 
+
 
 % Initialize variables
-position = x_input; % Assuming 2D position
+position = x_input
+GPS_noise = 0.1;
 
-GPS_noise = 0.1; % Example noise value
+GPS_drift_prev = 0;
 
-GPS_drift_prev = 0; % Initial drift
+drift_rate = 0.01;
 
-drift_rate = 0.01; % Example drift rate
-
-we_p = 0; % Placeholder for additional parameter
+we_p = 0;
 
 t = 0; % Initial time
 dt_p = 1; % Time step

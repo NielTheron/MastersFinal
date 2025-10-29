@@ -140,20 +140,20 @@ P_EKF = zeros(n_x,n_x,n_s);         % Initialise filter covariance matrix
 % Initialize Filter
 x_EKF(:,1) = [r_f; v_f; q_O2B_f; w_O2B_f];    % Estimated state
 P_EKF(:,:,1) =  TuneP(Prx, Pry, Prz, Pvx, Pvy, Pvz, Pqs, Pqx, Pqy, Pqz, Pwx, Pwy, Pwz);     % Covariance matrix
-Q_EKF =         TuneQ(Qrx, Qry, Qrz, Qvx, Qvy, Qvz, Qqs, Qqx, Qqy, Qqz, Qwx, Qwy, Qwz);   % Process Noise Matrix
+Q_EKF =         TuneQ(Qrx, Qry, Qrz, Qvx, Qvy, Qvz, Qqs, Qqx, Qqy, Qqz, Qwx, Qwy, Qwz, dt_f);   % Process Noise Matrix
 %---
 
 %==========================================================================
 %% Initialise Earth Tracker ===============================================
 
 % Initialise Feature Detection
-f_m = zeros(2,n_f,n_s);                 % Feature Pixel Locations (pixels)
-f_d = zeros(2,n_f,n_s);                 % Feature Pixel Locations (pixels)
+f_m = zeros(2,n_f,n_s);                 % Feature Pixel Locations for image (pixels)
+f_d = zeros(2,n_f,n_s);                 % Feature Pixel Locations for distorted image (pixels)
 %--
 
 % Initialsie LineOfSight Varaibles
 n_ET     = 3;                           % Number of measurements
-R_ET     = noise_ET*eye(3);             % Measurement Noise Covariance Matrix
+R_ET     = noise_ET^2*eye(3);         % Measurement Noise Covariance Matrix
 z_ET     = zeros(n_ET,n_f,n_s);         % Earth tracker measurement (km)
 y_ET     = zeros(n_ET,n_f,n_s);         % Estimated Earth tracker measurement (km)
 K_ET     = zeros(n_x,n_ET,n_f,n_s);     % Earth tracker Kalman Gain (km)
@@ -179,7 +179,7 @@ drift_GYR   = zeros(n_GYR,1);                   % Gyroscope drift buffer
 
 % GPS
 n_GPS       = 3;                                % Number of measurements
-R_GPS       = noise_GPS^2*eye(3);               % GPS noise matrix
+R_GPS = diag([(noise_GPS/111)^2;(noise_GPS/111)^2;(noise_GPS/1000)^2]);
 z_GPS       = zeros(n_GPS,n_s);                 % GPS measurement
 y_GPS       = zeros(n_GPS,n_s);                 % GPS estimated measurement
 K_GPS       = zeros(n_x,n_GPS,n_s);             % GPS Kalman Gain
@@ -196,7 +196,7 @@ K_ST        = zeros(n_x,n_ST,n_s);              % Star tracker Kalman Gain
 
 % Magnetometer
 n_MAG       = 3;                                % Number of measurements
-R_MAG       = deg2rad(noise_MAG)^2*eye(n_MAG);  % Magnetometer noise matrix (rad)
+R_MAG       = noise_MAG^2*eye(n_MAG);           % Magnetometer noise matrix (rad)
 z_MAG       = zeros(n_MAG,n_s);                 % Magnetometer measurements
 y_MAG       = zeros(n_MAG,n_s);                 % Magnetometer estimated measurements
 K_MAG       = zeros(n_x,n_MAG,n_s);             % Magnetimeter Kalman Gain
@@ -204,7 +204,7 @@ K_MAG       = zeros(n_x,n_MAG,n_s);             % Magnetimeter Kalman Gain
 
 % Coarse Sun Sensor
 n_CSS       = 3;                                % Number of measurements
-R_CSS       = deg2rad(noise_CSS)^2*eye(n_CSS);  % Coarse sun sensor noise matrix (rad)
+R_CSS       = noise_CSS^2*eye(n_CSS);           % Coarse sun sensor noise matrix (rad)
 z_CSS       = zeros(n_CSS,n_s);                 % Coarse sun sensor measurement
 y_CSS       = zeros(n_CSS,n_s);                 % Coarse sun sensor estimated measurement
 K_CSS       = zeros(n_x,n_CSS,n_s);             % Coarse sun sensor Kalman Gain
@@ -270,7 +270,7 @@ for r = 1:n_s-1
     %----------------------------------------------------------------------
 
     % Sensors -----------------------------------------------------------
-    [z_GPS(:,r), z_GYR(:,r), z_ST(:,:,r), z_CSS(:,r), z_MAG(:,r)] = ...
+    [z_GPS(:,r), z_GYR(:,r), z_ST(:,:,r), z_CSS(:,r), z_MAG(:,r), drift_GPS, drift_GYR] = ...
         SampleSensors(x_true(:,r), t, we_p, Mu_p, dt_p,                ...
         dt_GPS, noise_GPS, enable_GPS, drift_GPS, driftRate_GPS,  ...
         dt_GYR, noise_GYR, enable_GYR, drift_GYR, driftRate_GYR,  ...

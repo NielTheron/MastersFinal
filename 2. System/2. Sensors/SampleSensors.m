@@ -1,4 +1,4 @@
-function [z_GPS, z_GYR, z_ST, z_CSS, z_MAG] = ...
+function [z_GPS, z_GYR, z_ST, z_CSS, z_MAG, drift_GPS, drift_GYR] = ...
     SampleSensors(x_true, t, we_p, Mu_p, dt_p,...
     dt_GPS, noise_GPS, enable_GPS, drift_GPS, driftRate_GPS, ...
     dt_GYR, noise_GYR, enable_GYR, drift_GYR, driftRate_GYR, ...
@@ -9,7 +9,7 @@ function [z_GPS, z_GYR, z_ST, z_CSS, z_MAG] = ...
 % GPS =====================================================================
 j = mod(t,dt_GPS);
 if j == 0 && enable_GPS
-    z_GPS = GPS(x_true(1:3), noise_GPS, drift_GPS, driftRate_GPS, we_p, t, dt_p);
+    [z_GPS, drift_GPS] = GPS(x_true(1:3), noise_GPS, drift_GPS, driftRate_GPS, we_p, t, dt_p);
 else
     z_GPS= [0 0 0].';
 end
@@ -18,7 +18,7 @@ end
 % GYR =====================================================================
 j = mod(t,dt_GYR);
 if j == 0 && enable_GYR
-    z_GYR = Gyro(x_true(1:3), x_true(7:10), x_true(11:13), noise_GYR, drift_GYR, driftRate_GYR, Mu_p, dt_p);
+    [z_GYR, drift_GYR] = Gyro(x_true(1:3), x_true(7:10), x_true(11:13), noise_GYR, drift_GYR, driftRate_GYR, Mu_p, dt_p);
 else
     z_GYR = [0 0 0].';
 end

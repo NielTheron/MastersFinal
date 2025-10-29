@@ -29,12 +29,12 @@ R_O2C_D = [0 0 1; 0 1 0; -1 0 0];
 [r_I, v_I] = LLA2RV([lat; lon; alt],Mu,we,t,i);
 
 %=== Initialise Attitude =================================================
-R_O2C = eul2rotm([yaw, pit, rol],"ZYX") * R_O2C_D;
+R_O2C = eul2rotm(deg2rad([yaw, pit, rol]),"ZYX") * R_O2C_D;
 R_O2B = R_C2B * R_O2C;
 q_O2B = rotm2quat(R_O2B).';
 
 %=== Initialise Angular velocity =========================================
-w_O2B_B = R_C2B * [wx; wy; wz];
+w_O2B_B = R_C2B * deg2rad([wx; wy; wz]);
 
 %=========================================================================
 end

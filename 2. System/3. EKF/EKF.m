@@ -59,6 +59,30 @@ if norm(z_GYR) ~= 0
 end
 %---
 
+% CSS
+if norm(z_CSS) ~= 0
+  
+    zhat_CSS    = H_CSS_function(xp_EKF);
+    H_CSS       = H_CSS_jacobian(xp_EKF);
+
+    K_CSS       = GainUpdate(H_CSS, Pp_EKF, R_CSS);
+    xp_EKF      = StateUpdate(xp_EKF, K_CSS, z_CSS, zhat_CSS);
+    Pp_EKF      = CovarianceUpdate(K_CSS, Pp_EKF, R_CSS, H_CSS);
+%---
+
+end
+
+% Magnetometer
+if norm(z_MAG) ~= 0
+    zhat_MAG    = H_MAG_function(xp_EKF,we_f,t);    
+    H_MAG       = H_MAG_jacobian(xp_EKF,we_f,t);
+
+    K_MAG       = GainUpdate(H_MAG, Pp_EKF, R_MAG);
+    xp_EKF      = StateUpdate(xp_EKF, K_MAG, z_MAG, zhat_MAG);
+    Pp_EKF      = CovarianceUpdate(K_MAG, Pp_EKF, R_MAG, H_MAG);
+%---
+
+
 % Earth Tracker
 for i = 1:n_f
     if norm(z_ET(:,i)) ~= 0
@@ -89,29 +113,8 @@ for i = 1:20
 end
 %---
 
-% Magnetometer
-if norm(z_MAG) ~= 0
-    zhat_MAG    = H_MAG_function(xp_EKF,we_f,t);    
-    H_MAG       = H_MAG_jacobian(xp_EKF,we_f,t);
 
-    K_MAG       = GainUpdate(H_MAG, Pp_EKF, R_MAG);
-    xp_EKF      = StateUpdate(xp_EKF, K_MAG, z_MAG, zhat_MAG);
-    Pp_EKF      = CovarianceUpdate(K_MAG, Pp_EKF, R_MAG, H_MAG);
-end
-%---
 
-% CSS
-if norm(z_CSS) ~= 0
-  
-    zhat_CSS    = H_CSS_function(xp_EKF);
-    H_CSS       = H_CSS_jacobian(xp_EKF);
-
-    K_CSS       = GainUpdate(H_CSS, Pp_EKF, R_CSS);
-    xp_EKF      = StateUpdate(xp_EKF, K_CSS, z_CSS, zhat_CSS);
-    Pp_EKF      = CovarianceUpdate(K_CSS, Pp_EKF, R_CSS, H_CSS);
-%---
-
-end
 
 %% Pass the variables
 xp_EKF(7:10) = quatnormalize(xp_EKF(7:10).');

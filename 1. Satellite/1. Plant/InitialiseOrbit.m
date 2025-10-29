@@ -18,7 +18,7 @@ function [r_I, v_I, q_O2B, w_O2B_B] ...
 %   r_I            - Position vector (km) [3x1]
 %   v_I            - Velocity vector (km/s) [3x1] 
 %   q_I2B          - Inertial-to-Body quaternion [4x1] [qw, qx, qy, qz]
-%   w_I2B_B        - Body angular velocity relative to inertial frame (rad/s) [3x1]
+%   w_O2B_B        - Body angular velocity relative to Orbital frame (rad/s) [3x1]
 %==========================================================================
 
 % Constant
@@ -31,13 +31,13 @@ R_O2C_D = [0 0 1; 0 1 0; -1 0 0];
 %---
 
 % Initialise Attitude
-R_O2C = eul2rotm([yaw, pit, rol],"ZYX") * R_O2C_D;
+R_O2C = eul2rotm(deg2rad([yaw, pit, rol]),"ZYX") * R_O2C_D;
 R_O2B = R_C2B * R_O2C;
 q_O2B = rotm2quat(R_O2B).';
 %---
 
 % Initialise Angular velocity
-w_O2B_B = R_C2B * [wx; wy; wz];
+w_O2B_B = R_C2B * deg2rad([wx; wy; wz]);
 %---
 
 end
