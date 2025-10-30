@@ -1,10 +1,10 @@
 function MakeVideo(dt)
 
-outputFolder = fullfile('C:\Users\Niel\Desktop\1. Masters\1. Satellite\6. Plots');
+outputFolder = fullfile('C:\Users\Niel\Desktop\Masters\1. Satellite\6. Plots');
 
 
 % Settings
-imageFolder = 'C:\Users\Niel\Desktop\1. Masters\1. Satellite\2. Image Generator\SatelliteImages';
+imageFolder = 'C:\Users\Niel\Desktop\Masters\1. Satellite\2. Image Generator\SatelliteImages';
 outputVideoName = 'satellite_video';
 videoPath = fullfile(outputFolder,outputVideoName);
 frameRate = 1/dt;  % frames per second

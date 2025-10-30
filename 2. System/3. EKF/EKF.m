@@ -80,8 +80,8 @@ if norm(z_MAG) ~= 0
     K_MAG       = GainUpdate(H_MAG, Pp_EKF, R_MAG);
     xp_EKF      = StateUpdate(xp_EKF, K_MAG, z_MAG, zhat_MAG);
     Pp_EKF      = CovarianceUpdate(K_MAG, Pp_EKF, R_MAG, H_MAG);
+end
 %---
-
 
 % Earth Tracker
 for i = 1:n_f

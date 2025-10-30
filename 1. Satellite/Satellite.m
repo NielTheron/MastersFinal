@@ -132,16 +132,19 @@ d = uiprogressdlg(fig, 'Title','Running Simulation & Generating Images', ...
 startTime = tic;
 %==========================================================================
 
+x_true(:,2) = Plant(x_true(:,1), dt_p, I_p, Mu_p, Re_p, J2_p);
+m.poses(:,2) = x_true(:,1);
+
 currentImage = GenerateSatelliteImage_RayTrace( ...
-    x_true(1:3,r), ...      % r_I (Position)
-    x_true(4:6,r), ...      % v_I (Velocity)
-    x_true(7:10,r), ...     % q_O2B (Quaternion)
+    x_true(1:3,1), ...      % r_I (Position)
+    x_true(4:6,1), ...      % v_I (Velocity)
+    x_true(7:10,1), ...     % q_O2B (Quaternion)
     imgWidth_cam, ...
     imgHeight_cam, ...
     focalLength_cam, ...
     pixelSize_cam, ...
-    sourceMapFile. ...
-    t);
+    sourceMapFile, ...
+    0);
 m.images(:,:,:,1) = currentImage;
 SaveSatelliteImages(currentImage,1);
 
@@ -167,21 +170,22 @@ for r = 2:n_s
         imgHeight_cam, ...
         focalLength_cam, ...
         pixelSize_cam, ...
-        sourceMapFile. ...
+        sourceMapFile, ...
         t);
     
     m.images(:,:,:,r) = currentImage;
     SaveSatelliteImages(currentImage,r);
     % ----------------------------------------------------------------------
 
-    % Progress Bar Update -------------------------------------------------
+    % Progress bar --------------------------------------------------------
     elapsedTime = toc(startTime);
-    progress = r / numImagesToGenerate;
+    progress = r / (n_s-1);
     estTotalTime = elapsedTime / progress;
     estRemaining = estTotalTime - elapsedTime;
     d.Value = progress;
-    d.Message = sprintf('Elapsed: %.2fs | %d%% | Est. remaining: %.2fs | Image: %d/%d | Time/Image: %.2fs', ...
-        elapsedTime, round(progress*100), estRemaining, r, numImagesToGenerate, elapsedTime/r);
+    d.Message = sprintf('Elapsed: %.2fs | %d%% | Est. remaining: %.2fs | Sample: %d | Footage Time: %.2fs | Time per sample: %.2fs', ...
+        elapsedTime, round(progress*100), estRemaining,r+1,r*dt_p,elapsedTime/r);
+    drawnow;  
     %----------------------------------------------------------------------
 end
 

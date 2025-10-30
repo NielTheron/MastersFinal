@@ -6,9 +6,9 @@ tiledlayout(2,2)
 
 nexttile
 hold on
-stairs(n,xA(1,:))
-stairs(n,xA(2,:))
-stairs(n,xA(3,:))
+stairs(n,xA(1,1:length(n)))
+stairs(n,xA(2,1:length(n)))
+stairs(n,xA(3,1:length(n)))
 title('Real position')
 xlabel('Time (s)')
 ylabel("Position (ECI) (km)")
@@ -18,9 +18,9 @@ hold off
 
 nexttile
 hold on
-stairs(n,xA(4,:))
-stairs(n,xA(5,:))
-stairs(n,xA(6,:))
+stairs(n,xA(4,1:length(n)))
+stairs(n,xA(5,1:length(n)))
+stairs(n,xA(6,1:length(n)))
 title('Real velocity')
 xlabel('Time (s)')
 ylabel("Velocity (ECI) (km/s)")
@@ -30,10 +30,10 @@ hold off
 
 nexttile
 hold on
-stairs(n,xA(7,:))
-stairs(n,xA(8,:))
-stairs(n,xA(9,:))
-stairs(n,xA(10,:))
+stairs(n,xA(7,1:length(n)))
+stairs(n,xA(8,1:length(n)))
+stairs(n,xA(9,1:length(n)))
+stairs(n,xA(10,1:length(n)))
 title('Real attitude')
 xlabel('Time (s)')
 ylabel("Attitude (BOD2ECI)")
@@ -43,13 +43,13 @@ hold off
 
 nexttile
 hold on
-stairs(n,xA(11,:))
-stairs(n,xA(12,:))
-stairs(n,xA(13,:))
+stairs(n,rad2deg(xA(11,1:length(n))))
+stairs(n,rad2deg(xA(12,1:length(n))))
+stairs(n,rad2deg(xA(13,1:length(n))))
 title('Real angular velocity')
 xlabel('Time (s)')
-ylabel("Angular velocity (BOD) (rad/s)")
-ylim([-1 1])
+ylabel("Angular velocity (BOD) (deg/s)")
+% ylim([-1 1])
 grid on
 hold off
 end

@@ -318,7 +318,7 @@ for r = 1:n_s-1
     d.Value = progress;
     d.Message = sprintf('Elapsed: %.2fs | %d%% | Est. remaining: %.2fs | Sample: %d | Footage Time: %.2fs | Time per sample: %.2fs', ...
         elapsedTime, round(progress*100), estRemaining,r+1,r*dt_ET,elapsedTime/r);
-    drawnow;  % ← ADD THIS! (Process UI events and update progress bar)
+    drawnow;  
     %----------------------------------------------------------------------
 
     % Stop Simulation (final check) --------------------------------------
