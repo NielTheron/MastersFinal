@@ -198,7 +198,7 @@ R_ST        = deg2rad(noise_ST/3600)^2 * eye(3);    % Star tracker noise matrix 
 z_ST        = zeros(n_ST,20,n_s);                  % Star tracker measurements
 zhat_ST     = zeros(n_ST,20,n_s);                  % Star tracker estimated measurements
 y_ST        = zeros(n_ST,20,n_s);                  % Star tracker innovation
-H_ST      = zeros(n_GST,n_x,20,n_s);
+H_ST        = zeros(n_ST,n_x,20,n_s);
 K_ST        = zeros(n_x,n_ST,20,n_s);              % Star tracker Kalman Gain
 %---
 
@@ -266,7 +266,7 @@ for r = 1:n_s-1
         catalogue_geo(:,:,r) = Catalogue(f_d(:,:,r), x_true(:,r), ...
             focalLength_cam, pixelSize_cam, alpha_m, Ix, Iy, we_p, t);
 
-        catalogue_eci(:,:,r) = LLA2ECI(catalogue_lla, we_p, t);
+        catalogue_eci(:,:,r) = LLA2ECI(catalogue_geo(:,:,r), we_p, t);
         %------------------------------------------------------------
 
         % Save Images ----------------------------------------------
@@ -376,10 +376,10 @@ zhat_MAG        = zhat_MAG(:, 1:actual_samples);
 zhat_CSS        = zhat_CSS(:, 1:actual_samples);
 zhat_GPS        = zhat_GPS(:, 1:actual_samples);
 zhat_GYR        = zhat_GYR(:, 1:actual_samples);
-y_ET            = y_ET(:, 1:actual_samples);
+y_ET            = y_ET(:, :, 1:actual_samples);
 y_GPS           = y_GPS(:, 1:actual_samples);
 y_GYR           = y_GYR(:, 1:actual_samples);
-y_ST            = y_ST(:, 1:actual_samples);
+y_ST            = y_ST(:, :, 1:actual_samples);
 y_CSS           = y_CSS(:, 1:actual_samples);
 y_MAG           = y_MAG(:, 1:actual_samples);
 catalogue_eci   = catalogue_eci(:, :, 1:actual_samples);
@@ -387,11 +387,11 @@ catalogue_geo   = catalogue_geo(:, :, 1:actual_samples);
 f_m             = f_m(:, :, 1:actual_samples);
 f_d             = f_d(:, :, 1:actual_samples);
 K_ET            = K_ET(:, :, :, 1:actual_samples);
-K_GPS           = K_GPS(:, :, :, 1:actual_samples);
-K_GYR           = K_GYR(:, :, :, 1:actual_samples);
+K_GPS           = K_GPS(:, :, 1:actual_samples);
+K_GYR           = K_GYR(:, :, 1:actual_samples);
 K_ST            = K_ST(:, :, :, 1:actual_samples);
-K_MAG           = K_MAG(:, :, :, 1:actual_samples);
-K_CSS           = K_CSS(:, :, :, 1:actual_samples);
+K_MAG           = K_MAG(:, :, 1:actual_samples);
+K_CSS           = K_CSS(:, :, 1:actual_samples);
 %---
 
 %% Update progress dialog and show final status

@@ -39,6 +39,26 @@ zhat_ST = zeros(3,20);
 K_ST = zeros(13,3,20);
 H_ST = zeros(3,13,20);
 
+zhat_CSS = zeros(3,1);
+K_CSS = zeros(13,3);
+H_CSS = zeros(3,13);
+
+
+zhat_MAG = zeros(3,1);
+K_MAG = zeros(13,3);
+H_MAG = zeros(3,13);
+
+
+zhat_GPS = zeros(3,1);
+K_GPS = zeros(13,3);
+H_GPS = zeros(3,13);
+
+
+zhat_GYR = zeros(3,1);
+K_GYR = zeros(13,3);
+H_GYR = zeros(3,13);
+
+
 
 %% Prediction step
 xp_EKF = StatePredictionF(x_EKF,I_f,dt_f,Mu_f,Re_f,J2_f);
@@ -102,9 +122,9 @@ for i = 1:n_f
         zhat_ET(:,i)        = H_ET_function(xp_EKF,cat(:,i),we_f,t);
         H_ET(:,:,i)         = H_ET_jacobian(xp_EKF,cat(:,i),we_f,t);
 
-        K_ET(:,:,i) = GainUpdate(H_ET,Pp_EKF,R_ET);
+        K_ET(:,:,i) = GainUpdate(H_ET(:,:,i),Pp_EKF,R_ET);
         xp_EKF      = StateUpdate(xp_EKF,K_ET(:,:,i),z_ET(:,i),zhat_ET(:,i));
-        Pp_EKF      = CovarianceUpdate(K_ET(:,:,i),Pp_EKF,R_ET,H_ET);
+        Pp_EKF      = CovarianceUpdate(K_ET(:,:,i),Pp_EKF,R_ET,H_ET(:,:,i));
 
         xp_EKF(7:10) = quatnormalize(xp_EKF(7:10).');
 
@@ -115,13 +135,13 @@ end
 % Star Tracker
 for i = 1:20
     if norm(z_ST(:,i)) ~= 0
-        zhat_ST(:,i)  = H_ST_function_i(xp_EKF, i);
+        zhat_ST(:,i)  =  H_ST_function_i(xp_EKF, i);
         H_ST(:,:,i)     = H_ST_jacobian_i(xp_EKF, i);
 
         z_i     = z_ST(:,i);                  
-        K_ST(:,:,i)     = GainUpdate(H_ST, Pp_EKF, R_ST);  
-        xp_EKF  = StateUpdate(xp_EKF, K_ST, z_i, zhat_ST);
-        Pp_EKF  = CovarianceUpdate(K_ST, Pp_EKF, R_ST, H_ST);
+        K_ST(:,:,i)     = GainUpdate(H_ST(:,:,i), Pp_EKF, R_ST);  
+        xp_EKF  = StateUpdate(xp_EKF, K_ST(:,:,i), z_i, zhat_ST);
+        Pp_EKF  = CovarianceUpdate(K_ST(:,:,i), Pp_EKF, R_ST, H_ST(:,:,i));
     end
 end
 %---

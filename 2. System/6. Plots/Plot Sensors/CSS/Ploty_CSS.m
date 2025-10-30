@@ -1,26 +1,25 @@
-function Ploty_ET(y_ET,time)
+function Ploty_CSS(y_CSS,time)
 
-y_ET = squeeze(y_ET(:,3,:));
 
-figure('Name', 'Earth Tracker Error', 'NumberTitle', 'off')
+figure('Name', 'CSS Error', 'NumberTitle', 'off')
 
 for i = 1:3
     subplot(3,1,i); % Stack the 3 plots vertically
     hold on
 
     % Logical mask to ignore samples where *all* GPS components are zero
-    valid = any(y_ET ~= 0, 1);  % True if any axis has a nonzero value
+    valid = any(y_CSS ~= 0, 1);  % True if any axis has a nonzero value
 
     % Filter data
     t_valid     = time(valid);
-    y_valid     = y_ET(i, valid);
+    y_valid     = y_CSS(i, valid);
 
     % Plot only valid data
     scatter(t_valid, y_valid, 'k', 'LineWidth', 1.2);
 
     xlabel('Time (s)');
-    ylabel('Error (km/deg)');
-    title(sprintf('ET Measurement Feature 1 (Axis %d)', i));
+    ylabel('Error');
+    title(sprintf('CSS Measurement (Axis %d)', i));
     legend('Error', 'Location', 'best');
     grid on;
 
