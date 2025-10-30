@@ -158,6 +158,7 @@ R_ET     = (noise_ET/1000)^2*eye(3);         % Measurement Noise Covariance Matr
 z_ET     = zeros(n_ET,n_f,n_s);         % Earth tracker measurement (km)
 y_ET     = zeros(n_ET,n_f,n_s);         % Estimated Earth tracker measurement (km)
 K_ET     = zeros(n_x,n_ET,n_f,n_s);     % Earth tracker Kalman Gain (km)
+H_ET     = zeros(n_ET,n_x,n_f,n_s);
 %---
 
 % Initialise Geolocation Varaibles
@@ -176,6 +177,7 @@ z_GYR       = zeros(n_GYR,n_s);                 % Gyroscope measurement
 zhat_GYR    = zeros(n_GYR,n_s);                 % Gyroscope estimated measurement
 y_GYR       = zeros(n_GYR,n_s);                 % Gyroscope innovation
 K_GYR       = zeros(n_x,n_GYR,n_s);             % Gyroscope Kalman Gain
+H_GYR       = zeros(n_GYR,n_x,n_s);
 drift_GYR   = zeros(n_GYR,1);                   % Gyroscope drift buffer
 %---
 
@@ -186,6 +188,7 @@ z_GPS       = zeros(n_GPS,n_s);                 % GPS measurement
 zhat_GPS    = zeros(n_GPS,n_s);                 % GPS estimated measurement
 y_GPS       = zeros(n_GPS,n_s);                 % GPS innovation
 K_GPS       = zeros(n_x,n_GPS,n_s);             % GPS Kalman Gain
+H_GPS       = zeros(n_GPS,n_x,n_s);
 drift_GPS   = zeros(n_GPS,1);                   % GPS drift buffer
 %----
 
@@ -195,6 +198,7 @@ R_ST        = deg2rad(noise_ST/3600)^2 * eye(3);    % Star tracker noise matrix 
 z_ST        = zeros(n_ST,20,n_s);                  % Star tracker measurements
 zhat_ST     = zeros(n_ST,20,n_s);                  % Star tracker estimated measurements
 y_ST        = zeros(n_ST,20,n_s);                  % Star tracker innovation
+H_ST      = zeros(n_GST,n_x,20,n_s);
 K_ST        = zeros(n_x,n_ST,20,n_s);              % Star tracker Kalman Gain
 %---
 
@@ -204,6 +208,7 @@ R_MAG       = noise_MAG^2*eye(n_MAG);           % Magnetometer noise matrix
 z_MAG       = zeros(n_MAG,n_s);                 % Magnetometer measurements
 zhat_MAG    = zeros(n_MAG,n_s);                 % Magnetometer estimated measurements
 y_MAG       = zeros(n_MAG,n_s);                 % Magnetometer innovation
+H_MAG       = zeros(n_MAG,n_x,n_s);
 K_MAG       = zeros(n_x,n_MAG,n_s);             % Magnetimeter Kalman Gain
 %---
 
@@ -215,6 +220,7 @@ z_CSS       = zeros(n_CSS,n_s);                 % Coarse sun sensor measurement
 zhat_CSS    = zeros(n_CSS,n_s);                 % Coarse sun sensor estimated measurement
 y_CSS       = zeros(n_CSS,n_s);                 % Coarse sun sensor innovation
 K_CSS       = zeros(n_x,n_CSS,n_s);             % Coarse sun sensor Kalman Gain
+H_CSS       = zeros(n_CSS,n_x,n_s);
 %---
 
 %==========================================================================
@@ -292,15 +298,34 @@ for r = 1:n_s-1
     % EKF ---------------------------------------------------------------
     j = mod(t,dt_f);
     if j == 0
-        [zhat_ET(:,:,r), x_EKF(:,r+1), P_EKF(:,:,r+1), K_ET(:,:,:,r)] = EKF( ...
-            catalogue_geo(:,:,r),x_EKF(:,r),P_EKF(:,:,r),I_f,Q_EKF,dt_p,Mu_f,Re_f,J2_f,we_f,t, ...
-            z_ET(:,:,r), z_ST(:,:,r), z_GPS(:,r), z_GYR(:,r), z_MAG(:,r), z_CSS(:,r), ...
-            R_ET, R_ST, R_GPS, R_GYR, R_MAG, R_CSS);
+        [x_EKF(:,r+1),              ...
+         P_EKF(:,:,r+1),            ...
+         zhat_ET(:,:,r), K_ET(:,:,:,r), H_ET(:,:,:,r), ...
+         zhat_ST(:,:,r), K_ST(:,:,:,r), H_ST(:,:,:,r), ...
+         zhat_CSS(:,r),  K_CSS(:,:,r),  H_CSS(:,:,r), ...
+         zhat_MAG(:,r),  K_MAG(:,:,r),  H_MAG(:,:,r), ...
+         zhat_GYR(:,r),  K_GYR(:,:,r),  H_GYR(:,:,r), ...
+         zhat_GPS(:,r),  K_GPS(:,:,r),  H_GPS(:,:,r)   ] = EKF(      ...
+         catalogue_geo(:,:,r),      ...
+         x_EKF(:,r),                ...
+         P_EKF(:,:,r),              ...
+         I_f,Q_EKF,dt_p,Mu_f,Re_f,J2_f,we_f,t, ...
+         z_ET(:,:,r), z_ST(:,:,r), z_GPS(:,r), z_GYR(:,r), z_MAG(:,r), z_CSS(:,r), ...
+         R_ET, R_ST, R_GPS, R_GYR, R_MAG, R_CSS);
     else
         x_EKF(:,r+1) =  x_EKF(:,r);
         P_EKF(:,:,r+1) =  P_EKF(:,:,r);
     end
     %----------------------------------------------------------------------
+
+    % Calculating Errors --------------------------------------------------
+    y_ET(:,:,r) = z_ET(:,:,r) - zhat_ET(:,:,r);
+    y_ST(:,:,r) = z_ST(:,:,r) - zhat_ST(:,:,r);
+    y_GPS(:,r) = z_GPS(:,r) - zhat_GPS(:,r);
+    y_GYR(:,r) = z_GYR(:,r) - zhat_GYR(:,r);
+    y_CSS(:,r) = z_CSS(:,r) - zhat_CSS(:,r);
+    y_MAG(:,r) = z_MAG(:,r) - zhat_MAG(:,r);
+    %-----------------------------------------------------------
 
     % Estimated Video -----------------------------------------------------
     if mod(t,dt_ET) == 0 && enable_ET
@@ -342,14 +367,31 @@ P_EKF           = P_EKF(:, :, 1:actual_samples);
 z_ET            = z_ET(:, :, 1:actual_samples);
 z_GPS           = z_GPS(:, 1:actual_samples);
 z_GYR           = z_GYR(:, 1:actual_samples);
-z_ST            = z_ST(:,:, 1:actual_samples);
+z_ST            = z_ST(:, :, 1:actual_samples);
 z_CSS           = z_CSS(:, 1:actual_samples);
 z_MAG           = z_MAG(:, 1:actual_samples);
+zhat_ET         = zhat_ET(:, :, 1:actual_samples);
+zhat_ST         = zhat_ST(:, :, 1:actual_samples);
+zhat_MAG        = zhat_MAG(:, 1:actual_samples);
+zhat_CSS        = zhat_CSS(:, 1:actual_samples);
+zhat_GPS        = zhat_GPS(:, 1:actual_samples);
+zhat_GYR        = zhat_GYR(:, 1:actual_samples);
+y_ET            = y_ET(:, 1:actual_samples);
+y_GPS           = y_GPS(:, 1:actual_samples);
+y_GYR           = y_GYR(:, 1:actual_samples);
+y_ST            = y_ST(:, 1:actual_samples);
+y_CSS           = y_CSS(:, 1:actual_samples);
+y_MAG           = y_MAG(:, 1:actual_samples);
 catalogue_eci   = catalogue_eci(:, :, 1:actual_samples);
 catalogue_geo   = catalogue_geo(:, :, 1:actual_samples);
 f_m             = f_m(:, :, 1:actual_samples);
 f_d             = f_d(:, :, 1:actual_samples);
 K_ET            = K_ET(:, :, :, 1:actual_samples);
+K_GPS           = K_GPS(:, :, :, 1:actual_samples);
+K_GYR           = K_GYR(:, :, :, 1:actual_samples);
+K_ST            = K_ST(:, :, :, 1:actual_samples);
+K_MAG           = K_MAG(:, :, :, 1:actual_samples);
+K_CSS           = K_CSS(:, :, :, 1:actual_samples);
 %---
 
 %% Update progress dialog and show final status

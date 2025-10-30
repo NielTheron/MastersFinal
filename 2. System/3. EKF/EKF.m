@@ -14,7 +14,13 @@
 % K_est         : Kalman Gain
 % c             : Internal catalogue vector.
 %==========================================================================
-function [zhat_ET, x_EKF, P_EKF, K_ET] = EKF( ...
+function [x_EKF, P_EKF, ...
+          zhat_ET, K_ET, H_ET, ...
+          zhat_ST, K_ST, H_ST, ...
+          zhat_CSS, K_CSS, H_CSS, ...
+          zhat_MAG, K_MAG, H_MAG, ...
+          zhat_GYR, K_GYR, H_GYR, ...
+          zhat_GPS, K_GPS, H_GPS] = EKF( ...
  cat,x_EKF,P_EKF,I_f,Q_f,dt_f,Mu_f,Re_f, J2_f, we_f, t, ...
  z_ET, z_ST, z_GPS, z_GYR, z_MAG, z_CSS, ...
  R_ET, R_ST, R_GPS, R_GYR, R_MAG, R_CSS)
@@ -26,6 +32,13 @@ n_z = 3;
 n_f = size(z_ET,2);
 K_ET = zeros(n_x,n_z,n_f);
 zhat_ET = zeros(n_z,n_f);
+H_ET = zeros(n_z,n_x,n_f);
+
+
+zhat_ST = zeros(3,20);
+K_ST = zeros(13,3,20);
+H_ST = zeros(3,13,20);
+
 
 %% Prediction step
 xp_EKF = StatePredictionF(x_EKF,I_f,dt_f,Mu_f,Re_f,J2_f);
@@ -87,7 +100,7 @@ end
 for i = 1:n_f
     if norm(z_ET(:,i)) ~= 0
         zhat_ET(:,i)        = H_ET_function(xp_EKF,cat(:,i),we_f,t);
-        H_ET                = H_ET_jacobian(xp_EKF,cat(:,i),we_f,t);
+        H_ET(:,:,i)         = H_ET_jacobian(xp_EKF,cat(:,i),we_f,t);
 
         K_ET(:,:,i) = GainUpdate(H_ET,Pp_EKF,R_ET);
         xp_EKF      = StateUpdate(xp_EKF,K_ET(:,:,i),z_ET(:,i),zhat_ET(:,i));
@@ -102,13 +115,13 @@ end
 % Star Tracker
 for i = 1:20
     if norm(z_ST(:,i)) ~= 0
-        zhat_i  = H_ST_function_i(xp_EKF, i);
-        H_i     = H_ST_jacobian_i(xp_EKF, i);
+        zhat_ST(:,i)  = H_ST_function_i(xp_EKF, i);
+        H_ST(:,:,i)     = H_ST_jacobian_i(xp_EKF, i);
 
         z_i     = z_ST(:,i);                  
-        K_i     = GainUpdate(H_i, Pp_EKF, R_ST);  
-        xp_EKF  = StateUpdate(xp_EKF, K_i, z_i, zhat_i);
-        Pp_EKF  = CovarianceUpdate(K_i, Pp_EKF, R_ST, H_i);
+        K_ST(:,:,i)     = GainUpdate(H_ST, Pp_EKF, R_ST);  
+        xp_EKF  = StateUpdate(xp_EKF, K_ST, z_i, zhat_ST);
+        Pp_EKF  = CovarianceUpdate(K_ST, Pp_EKF, R_ST, H_ST);
     end
 end
 %---

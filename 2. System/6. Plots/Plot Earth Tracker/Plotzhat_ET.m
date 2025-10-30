@@ -1,7 +1,7 @@
-function PlotMeasurement(y_est, n_f, dt)
-    figure('Name', 'Real Measurement')
+function Plotzhat_ET(zhat_ET,n_f,dt)
+    figure('Name', 'Estimated Measurement')
     hold on
-    n = (0:size(y_est,3)-1) * dt;
+    n = (0:size(zhat_ET,3)-1) * dt;
 
     % Axis colors and labels
     colors = {'b', 'g', 'r'};
@@ -9,7 +9,7 @@ function PlotMeasurement(y_est, n_f, dt)
 
     for i = 1:n_f
         for k = 1:3  % x, y, z components
-            y_vals = squeeze(y_est(k, i, :))';  % Get 1×time vector
+            y_vals = squeeze(zhat_ET(k, i, :))';  % Get 1×time vector
             valid_idx = y_vals ~= 0;
             n_valid = n(valid_idx);
             y_valid = y_vals(valid_idx);
@@ -20,7 +20,7 @@ function PlotMeasurement(y_est, n_f, dt)
         end
     end
 
-    title("Real Measurements")
+    title("Estimated Measurements")
     xlabel("Time (s)")
     ylabel("Distance (km) in Body Frame")
     % legend('show')
