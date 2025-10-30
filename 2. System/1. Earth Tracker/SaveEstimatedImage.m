@@ -92,7 +92,7 @@ end
 % Save image
 %==========================================================================
 filename = sprintf('estimated_image_%03d.png', r);  
-outputFolder = 'C:\Users\Niel\Desktop\1. Masters\2. System\1. Earth Tracker\EstimatedImages';
+outputFolder = 'C:\Users\Niel\Desktop\Masters\2. System\1. Earth Tracker\EstimatedImages';
 fullpath = fullfile(outputFolder, filename);
 imwrite(rgbImage, fullpath);
 

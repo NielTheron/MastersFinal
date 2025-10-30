@@ -1,9 +1,9 @@
 function MakeEstimatedVideo(dt)
 
-outputFolder = fullfile('C:\Users\Niel\Desktop\1. Masters\2. System\6. Plots\Video');
+outputFolder = fullfile('C:\Users\Niel\Desktop\Masters\2. System\6. Plots\Video');
 
 % Settings
-imageFolder = 'C:\Users\Niel\Desktop\1. Masters\2. System\1. Earth Tracker\EstimatedImages';
+imageFolder = 'C:\Users\Niel\Desktop\Masters\2. System\1. Earth Tracker\EstimatedImages';
 outputVideoName = 'estimated_video.mp4';
 videoPath = fullfile(outputFolder,outputVideoName);
 frameRate = 1/dt;  % frames per second

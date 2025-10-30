@@ -11,7 +11,7 @@ function SaveFeatureImages(grayImage,locations,r)
     circles = [locations, repmat(radii, numPoints, 1)];
     feature_image = insertShape(rgbImage, 'FilledCircle', circles,'Color', 'red', 'Opacity', 1);
     filename = sprintf('feature_image_%03d.png', r);  % Zero-padded filename like sat_image_001.mat
-    outputFolder = 'C:\Users\Niel\Desktop\1. Masters\2. System\1. Earth Tracker\FeatureImages';
+    outputFolder = 'C:\Users\Niel\Desktop\Masters\2. System\1. Earth Tracker\FeatureImages';
     fullpath = fullfile(outputFolder,filename);
     imwrite(feature_image,fullpath);
 end

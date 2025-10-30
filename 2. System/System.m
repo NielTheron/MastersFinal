@@ -392,6 +392,12 @@ K_GYR           = K_GYR(:, :, 1:actual_samples);
 K_ST            = K_ST(:, :, :, 1:actual_samples);
 K_MAG           = K_MAG(:, :, 1:actual_samples);
 K_CSS           = K_CSS(:, :, 1:actual_samples);
+H_ET            = H_ET(:, :, :, 1:actual_samples);
+H_GPS           = H_GPS(:, :, 1:actual_samples);
+H_GYR           = H_GYR(:, :, 1:actual_samples);
+H_ST            = H_ST(:, :, :, 1:actual_samples);
+H_MAG           = H_MAG(:, :, 1:actual_samples);
+H_CSS           = H_CSS(:, :, 1:actual_samples);
 %---
 
 %% Update progress dialog and show final status
@@ -472,6 +478,16 @@ assignin('base', 'K_ST', K_ST);
 assignin('base', 'K_MAG', K_MAG);
 assignin('base', 'K_CSS', K_CSS);
 %---
+
+% Save Measurement matrices
+assignin('base', 'H_ET', H_ET);
+assignin('base', 'H_GPS', H_GPS);
+assignin('base', 'H_GYR', H_GYR);
+assignin('base', 'H_ST', H_ST);
+assignin('base', 'H_MAG', H_MAG);
+assignin('base', 'H_CSS', H_CSS);
+%---
+
 
 % Save noise matrices
 assignin('base', 'R_ET', R_ET);

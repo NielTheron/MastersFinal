@@ -1,9 +1,9 @@
 function MakeFeatureVideo(dt)
 
-outputFolder = fullfile('C:\Users\Niel\Desktop\1. Masters\2. System\6. Plots\Video');
+outputFolder = fullfile('C:\Users\Niel\Desktop\Masters\2. System\6. Plots\Video');
 
 % Settings
-imageFolder = 'C:\Users\Niel\Desktop\1. Masters\2. System\1. Earth Tracker\FeatureImages';
+imageFolder = 'C:\Users\Niel\Desktop\Masters\2. System\1. Earth Tracker\FeatureImages';
 outputVideoName = 'feature_video.mp4';
 videoPath = fullfile(outputFolder,outputVideoName);
 frameRate = 1/dt;  % frames per second
