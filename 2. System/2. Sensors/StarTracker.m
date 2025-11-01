@@ -31,6 +31,11 @@ Gamma = [ ...
    -0.6133  -0.7895   0.0254;
     0.3166  -0.8947  -0.3150;
    -0.0000  -1.0000   0.0000].';
+
+% ADDED: Ensure all catalog vectors are normalized
+for i = 1:size(Gamma,2)
+    Gamma(:,i) = Gamma(:,i) / norm(Gamma(:,i));
+end
 %==========================================================================
 
 %=== R_I2O ================================================================
@@ -54,7 +59,7 @@ for i = 1:d
     v = R_O2B * R_I2O * Gamma(:,i);
 
     % Add angular noise with std = noise_ST (rad)
-    theta = noise_ST * randn;     % small random angle
+    theta = deg2rad(noise_ST/3600) * randn;     % small random angle
     u = null(v.');                % find 2 orthonormal vectors perpendicular to v
     axis = u * randn(2,1);        % random direction in tangent plane
     axis = axis / norm(axis);     % normalize axis

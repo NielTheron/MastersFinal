@@ -1,9 +1,12 @@
 %==========================================================================
 % Niel Theron
+% FIXED VERSION - Added normalization
 % 02-10-2025
 %==========================================================================
 % The purpose of this function is to create Star Tracker Estimate measurements using
 % the estimated state
+%
+% FIXED: Added normalization to match the measurement model in StarTracker.m
 %==========================================================================
 
 function zhat_ST = H_ST_function(x_est)
@@ -30,6 +33,11 @@ Gamma = [ ...
    -0.6133  -0.7895   0.0254;
     0.3166  -0.8947  -0.3150;
    -0.0000  -1.0000   0.0000].';
+
+% ADDED: Ensure all catalog vectors are normalized
+for i = 1:size(Gamma,2)
+    Gamma(:,i) = Gamma(:,i) / norm(Gamma(:,i));
+end
 %==========================================================================
 
 %=== R_I2O ================================================================
@@ -44,12 +52,17 @@ R_O2B = quat2rotm(x_est(7:10).');
 
 %==========================================================================
 
-%=== Transform and Add Noise ==============================================
+%=== Transform and Normalize ==============================================
 d = size(Gamma,2);
 zhat_ST = zeros(3,d);
 
 for i = 1:d
-    zhat_ST(:,i) = R_O2B * R_I2O * Gamma(:,i);
+    % Transform star direction to body frame
+    v = R_O2B * R_I2O * Gamma(:,i);
+    
+    % FIXED: Normalize to match measurement model
+    % This ensures consistency with StarTracker.m which normalizes measurements
+    zhat_ST(:,i) = v / norm(v);
 end
 
 %=========================================================================

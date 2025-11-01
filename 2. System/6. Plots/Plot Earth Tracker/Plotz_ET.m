@@ -23,7 +23,7 @@ for i = 1:3
     scatter(t_valid, zhat_valid, 'r', 'LineWidth', 1.8);
 
     xlabel('Time (s)');
-    ylabel('Distance (km/deg)');
+    ylabel('Distance (km)');
     title(sprintf('ET Measurement Feature 1 (Axis %d)', i));
     legend('True Value', 'Estimated Value', 'Location', 'best');
     grid on;

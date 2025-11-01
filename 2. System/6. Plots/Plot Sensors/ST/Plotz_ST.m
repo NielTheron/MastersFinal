@@ -23,8 +23,8 @@ for i = 1:3
     scatter(t_valid, zhat_valid, 'r', 'LineWidth', 1.8);
 
     xlabel('Time (s)');
-    ylabel('Magnitude (nT)');
-    title(sprintf('Mag Measurement (Axis %d)', i));
+    ylabel('Magnitude');
+    title(sprintf('Star Tracker Measurement (Axis %d)', i));
     legend('True Value', 'Estimated Value', 'Location', 'best');
     grid on;
 

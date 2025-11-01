@@ -2,7 +2,7 @@ function Ploty_ST(y_ST,time)
 
 y_ST = squeeze(y_ST(:,1,:));
 
-figure('Name', 'Magnetometer Error', 'NumberTitle', 'off')
+figure('Name', 'Star Tracker Error', 'NumberTitle', 'off')
 
 for i = 1:3
     subplot(3,1,i); % Stack the 3 plots vertically
@@ -19,8 +19,8 @@ for i = 1:3
     scatter(t_valid, y_valid, 'k', 'LineWidth', 1.2);
 
     xlabel('Time (s)');
-    ylabel('Error (nT)');
-    title(sprintf('Magnotometer Measurement (Axis %d)', i));
+    ylabel('Error');
+    title(sprintf('Star Tracker Measurement (Axis %d)', i));
     legend('Error', 'Location', 'best');
     grid on;
 

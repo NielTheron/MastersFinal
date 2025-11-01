@@ -19,7 +19,7 @@ for i = 1:3
     scatter(t_valid, y_valid, 'k', 'LineWidth', 1.2);
 
     xlabel('Time (s)');
-    ylabel('Error (km/deg)');
+    ylabel('Error (km)');
     title(sprintf('ET Measurement Feature 1 (Axis %d)', i));
     legend('Error', 'Location', 'best');
     grid on;

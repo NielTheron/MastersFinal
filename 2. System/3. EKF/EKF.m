@@ -137,16 +137,24 @@ for i = 1:20
     if norm(z_ST(:,i)) ~= 0
         zhat_ST(:,i)  =  H_ST_function_i(xp_EKF, i);
         H_ST(:,:,i)     = H_ST_jacobian_i(xp_EKF, i);
-
-        z_i     = z_ST(:,i);                  
+              
         K_ST(:,:,i)     = GainUpdate(H_ST(:,:,i), Pp_EKF, R_ST);  
-        xp_EKF  = StateUpdate(xp_EKF, K_ST(:,:,i), z_i, zhat_ST);
+        xp_EKF  = StateUpdate(xp_EKF, K_ST(:,:,i), z_ST(:,i), zhat_ST(:,i));
         Pp_EKF  = CovarianceUpdate(K_ST(:,:,i), Pp_EKF, R_ST, H_ST(:,:,i));
     end
 end
 %---
 
-
+% % GPS
+% if norm(z_GPS) ~= 0
+%     zhat_GPS    = H_GPS_function(xp_EKF,we_f,t);
+%     H_GPS       = H_GPS_jacobian(xp_EKF,we_f,t);
+% 
+%     K_GPS       = GainUpdate(H_GPS,Pp_EKF,R_GPS);
+%     xp_EKF      = StateUpdate(xp_EKF,K_GPS,z_GPS,zhat_GPS);
+%     Pp_EKF      = CovarianceUpdate(K_GPS,Pp_EKF,R_GPS,H_GPS);
+% end
+% %---
 
 
 %% Pass the variables
