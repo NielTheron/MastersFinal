@@ -96,18 +96,13 @@ enable_ET      = evalin("base","enable_ET");
 %---
 
 % NEW: ET Temporal Delay Parameter
-% Read the delay parameter from base workspace (number of ET sampling periods to delay)
-if evalin("base","exist('delay_ET_periods','var')")
-    delay_ET_periods = evalin("base","delay_ET_periods");
+% Read the delay parameter from base workspace (number of timesteps to delay)
+if evalin("base","exist('delay_ET_steps','var')")
+    delay_ET_steps = evalin("base","delay_ET_steps");
 else
-    delay_ET_periods = 0;  % Default: no delay
-    fprintf('Warning: delay_ET_periods not found in workspace. Using default value of 0.\n');
+    delay_ET_steps = 0;  % Default: no delay
+    fprintf('Warning: delay_ET_steps not found in workspace. Using default value of 0.\n');
 end
-
-% Convert ET periods to simulation timesteps
-% delay_ET_periods is in units of dt_ET (ET sampling periods)
-% We need to convert to units of dt_p (simulation timesteps)
-delay_ET_steps = round(delay_ET_periods * dt_ET / dt_p);
 %---
 
 % GPS / GYR / ST / CSS / MAG enabling, noise & timing
@@ -254,15 +249,13 @@ startTime = tic;
 %---
 
 % Display delay information
-if delay_ET_periods > 0
+if delay_ET_steps > 0
     fprintf('\n╔════════════════════════════════════════╗\n');
     fprintf('║   ET TEMPORAL DELAY ENABLED            ║\n');
     fprintf('╚════════════════════════════════════════╝\n');
-    fprintf('  Delay: %d ET sampling period(s)\n', delay_ET_periods);
-    fprintf('  ET sampling rate: %.3f Hz (dt_ET = %.3f s)\n', 1/dt_ET, dt_ET);
-    fprintf('  Actual delay: %.3f seconds\n', delay_ET_periods * dt_ET);
-    fprintf('  Equivalent to %d simulation timesteps (dt_p = %.3f s)\n', delay_ET_steps, dt_p);
-    fprintf('  Filter will use measurements from t-%.3fs\n\n', delay_ET_periods * dt_ET);
+    fprintf('  Delay: %d timesteps\n', delay_ET_steps);
+    fprintf('  Delay duration: %.3f seconds\n', delay_ET_steps * dt_p);
+    fprintf('  Filter will use measurements from t-%.3fs\n\n', delay_ET_steps * dt_p);
 end
 %---
 
@@ -495,8 +488,7 @@ assignin('base', 'P_EKF', P_EKF);
 assignin('base', 'Q_EKF',Q_EKF);
 assignin('base', 'actual_samples', actual_samples);
 assignin('base', 'n_s', n_s);
-assignin('base', 'delay_ET_periods', delay_ET_periods);  % NEW: Save delay in ET periods
-assignin('base', 'delay_ET_steps', delay_ET_steps);      % NEW: Save delay in timesteps
+assignin('base', 'delay_ET_steps', delay_ET_steps);  % NEW: Save delay parameter
 %---
 
 % Save measurement data
@@ -558,10 +550,8 @@ assignin('base', 'R_MAG', R_MAG);
 %---
 
 fprintf('Simulation variables saved to base workspace.\n');
-if delay_ET_periods > 0
+if delay_ET_steps > 0
     fprintf('Note: Both z_ET (current) and z_ET_delayed (used by filter) have been saved.\n');
-    fprintf('      Delay = %d ET period(s) = %.3f seconds = %d timesteps\n', ...
-            delay_ET_periods, delay_ET_periods * dt_ET, delay_ET_steps);
 end
 
 %% Clean up and show completion dialog

@@ -1,6 +1,6 @@
 function Ploty_ET(y_ET,time)
 
-y_ET = squeeze(y_ET(:,3,:));
+y_ET = squeeze(y_ET(:,1,:));
 
 figure('Name', 'Earth Tracker Error', 'NumberTitle', 'off')
 

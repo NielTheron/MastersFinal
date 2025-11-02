@@ -1,10 +1,7 @@
 %==========================================================================
-% Simulator with ET Temporal Delay
-% Modified by: Niel Theron
-% Date: 12-06-2025
-% 
-% MODIFICATION: Added temporal delay to Earth Tracker (ET) measurements
-%               z_ET measurements are now delayed by a specified number of timesteps
+% Simulator
+% Niel Theron
+% 12-06-2025
 %==========================================================================
 function System(app)
 %% Simulation Parameters ==================================================
@@ -95,21 +92,6 @@ noise_ET       = evalin("base","noise_ET");
 enable_ET      = evalin("base","enable_ET");
 %---
 
-% NEW: ET Temporal Delay Parameter
-% Read the delay parameter from base workspace (number of ET sampling periods to delay)
-if evalin("base","exist('delay_ET_periods','var')")
-    delay_ET_periods = evalin("base","delay_ET_periods");
-else
-    delay_ET_periods = 0;  % Default: no delay
-    fprintf('Warning: delay_ET_periods not found in workspace. Using default value of 0.\n');
-end
-
-% Convert ET periods to simulation timesteps
-% delay_ET_periods is in units of dt_ET (ET sampling periods)
-% We need to convert to units of dt_p (simulation timesteps)
-delay_ET_steps = round(delay_ET_periods * dt_ET / dt_p);
-%---
-
 % GPS / GYR / ST / CSS / MAG enabling, noise & timing
 dt_GPS    = evalin("base","dt_GPS");
 dt_GYR    = evalin("base","dt_GYR");
@@ -173,8 +155,7 @@ f_d = zeros(2,n_f,n_s);                 % Feature Pixel Locations for distorted 
 % Initialsie LineOfSight Varaibles
 n_ET     = 3;                           % Number of measurements
 R_ET     = (noise_ET/1000)^2*eye(3);         % Measurement Noise Covariance Matrix
-z_ET     = zeros(n_ET,n_f,n_s);         % Earth tracker measurement (km) - CURRENT measurements
-z_ET_delayed = zeros(n_ET,n_f,n_s);     % NEW: Delayed ET measurements for filter
+z_ET     = zeros(n_ET,n_f,n_s);         % Earth tracker measurement (km)
 y_ET     = zeros(n_ET,n_f,n_s);         % Estimated Earth tracker measurement (km)
 K_ET     = zeros(n_x,n_ET,n_f,n_s);     % Earth tracker Kalman Gain (km)
 H_ET     = zeros(n_ET,n_x,n_f,n_s);
@@ -183,7 +164,6 @@ H_ET     = zeros(n_ET,n_x,n_f,n_s);
 % Initialise Geolocation Varaibles
 catalogue_geo   = zeros(3,n_f,n_s);     % Catalogue in lla
 catalogue_eci   = zeros(3,n_f,n_s);     % Catalogue in ECI
-catalogue_geo_delayed = zeros(3,n_f,n_s); % NEW: Delayed catalogue for filter
 zhat_ET = zeros(3,n_f,n_s);
 %---
 
@@ -253,19 +233,6 @@ d = uiprogressdlg(fig, 'Title','Running Simulation', ...
 startTime = tic;
 %---
 
-% Display delay information
-if delay_ET_periods > 0
-    fprintf('\n╔════════════════════════════════════════╗\n');
-    fprintf('║   ET TEMPORAL DELAY ENABLED            ║\n');
-    fprintf('╚════════════════════════════════════════╝\n');
-    fprintf('  Delay: %d ET sampling period(s)\n', delay_ET_periods);
-    fprintf('  ET sampling rate: %.3f Hz (dt_ET = %.3f s)\n', 1/dt_ET, dt_ET);
-    fprintf('  Actual delay: %.3f seconds\n', delay_ET_periods * dt_ET);
-    fprintf('  Equivalent to %d simulation timesteps (dt_p = %.3f s)\n', delay_ET_steps, dt_p);
-    fprintf('  Filter will use measurements from t-%.3fs\n\n', delay_ET_periods * dt_ET);
-end
-%---
-
 %==========================================================================
 %% Run Simulation =========================================================
 for r = 1:n_s-1
@@ -313,26 +280,10 @@ for r = 1:n_s-1
         %=-----------------------------------------------------------
 
         
-        % Create Sensor Measurements (CURRENT, not delayed yet)
+        % Create Sensor Measurements 
         z_ET(:,:,r) = EarthTracker(f_m(:,:,r),imgWidth_ET,imgHeight_ET,focalLength_ET, pixelSize_ET,alpha_ET);
     else
         z_ET(:,:,r) = zeros(n_ET,n_f);
-    end
-    %----------------------------------------------------------------------
-    
-    % NEW: Apply Temporal Delay to ET Measurements ------------------------
-    % The filter uses measurements from (r - delay_ET_steps) timesteps ago
-    if r > delay_ET_steps
-        % Use delayed measurement from previous timestep
-        delayed_index = r - delay_ET_steps;
-        z_ET_delayed(:,:,r) = z_ET(:,:,delayed_index);
-        catalogue_geo_delayed(:,:,r) = catalogue_geo(:,:,delayed_index);
-    else
-        % During initial timesteps when buffer isn't full, use zeros or
-        % you could use current measurements (no delay)
-        z_ET_delayed(:,:,r) = zeros(n_ET,n_f);  % Option 1: Use zeros
-        % z_ET_delayed(:,:,r) = z_ET(:,:,r);    % Option 2: Use current (no delay yet)
-        catalogue_geo_delayed(:,:,r) = zeros(3,n_f);  % Corresponding catalogue
     end
     %----------------------------------------------------------------------
 
@@ -349,7 +300,6 @@ for r = 1:n_s-1
     % EKF ---------------------------------------------------------------
     j = mod(t,dt_f);
     if j == 0
-        % MODIFIED: Pass delayed measurements to the EKF
         [x_EKF(:,r+1),              ...
          P_EKF(:,:,r+1),            ...
          zhat_ET(:,:,r), K_ET(:,:,:,r), H_ET(:,:,:,r), ...
@@ -358,11 +308,11 @@ for r = 1:n_s-1
          zhat_MAG(:,r),  K_MAG(:,:,r),  H_MAG(:,:,r), ...
          zhat_GYR(:,r),  K_GYR(:,:,r),  H_GYR(:,:,r), ...
          zhat_GPS(:,r),  K_GPS(:,:,r),  H_GPS(:,:,r)   ] = EKF(      ...
-         catalogue_geo_delayed(:,:,r), ... % Use delayed catalogue
+         catalogue_geo(:,:,r),      ...
          x_EKF(:,r),                ...
          P_EKF(:,:,r),              ...
          I_f,Q_EKF,dt_p,Mu_f,Re_f,J2_f,we_f,t, ...
-         z_ET_delayed(:,:,r), z_ST(:,:,r), z_GPS(:,r), z_GYR(:,r), z_MAG(:,r), z_CSS(:,r), ... % Use delayed z_ET
+         z_ET(:,:,r), z_ST(:,:,r), z_GPS(:,r), z_GYR(:,r), z_MAG(:,r), z_CSS(:,r), ...
          R_ET, R_ST, R_GPS, R_GYR, R_MAG, R_CSS);
     else
         x_EKF(:,r+1) =  x_EKF(:,r);
@@ -371,8 +321,7 @@ for r = 1:n_s-1
     %----------------------------------------------------------------------
 
     % Calculating Errors --------------------------------------------------
-    % MODIFIED: Calculate innovation using delayed measurements
-    y_ET(:,:,r) = z_ET_delayed(:,:,r) - zhat_ET(:,:,r);
+    y_ET(:,:,r) = z_ET(:,:,r) - zhat_ET(:,:,r);
     y_ST(:,:,r) = z_ST(:,:,r) - zhat_ST(:,:,r);
     y_GPS(:,r) = z_GPS(:,r) - zhat_GPS(:,r);
     y_GYR(:,r) = z_GYR(:,r) - zhat_GYR(:,r);
@@ -418,7 +367,6 @@ actual_samples = r + 1;  % +1 because we have initial condition
 x_EKF           = x_EKF(:, 1:actual_samples);
 P_EKF           = P_EKF(:, :, 1:actual_samples);
 z_ET            = z_ET(:, :, 1:actual_samples);
-z_ET_delayed    = z_ET_delayed(:, :, 1:actual_samples);  % NEW: Save delayed measurements
 z_GPS           = z_GPS(:, 1:actual_samples);
 z_GYR           = z_GYR(:, 1:actual_samples);
 z_ST            = z_ST(:, :, 1:actual_samples);
@@ -438,7 +386,6 @@ y_CSS           = y_CSS(:, 1:actual_samples);
 y_MAG           = y_MAG(:, 1:actual_samples);
 catalogue_eci   = catalogue_eci(:, :, 1:actual_samples);
 catalogue_geo   = catalogue_geo(:, :, 1:actual_samples);
-catalogue_geo_delayed = catalogue_geo_delayed(:, :, 1:actual_samples); % NEW
 f_m             = f_m(:, :, 1:actual_samples);
 f_d             = f_d(:, :, 1:actual_samples);
 K_ET            = K_ET(:, :, :, 1:actual_samples);
@@ -495,13 +442,10 @@ assignin('base', 'P_EKF', P_EKF);
 assignin('base', 'Q_EKF',Q_EKF);
 assignin('base', 'actual_samples', actual_samples);
 assignin('base', 'n_s', n_s);
-assignin('base', 'delay_ET_periods', delay_ET_periods);  % NEW: Save delay in ET periods
-assignin('base', 'delay_ET_steps', delay_ET_steps);      % NEW: Save delay in timesteps
 %---
 
 % Save measurement data
-assignin('base', 'z_ET', z_ET);                    % Current measurements
-assignin('base', 'z_ET_delayed', z_ET_delayed);    % NEW: Delayed measurements
+assignin('base', 'z_ET', z_ET);
 assignin('base', 'z_GPS', z_GPS);
 assignin('base', 'z_GYR', z_GYR);
 assignin('base', 'z_ST', z_ST);
@@ -524,7 +468,6 @@ assignin('base', 'y_MAG', y_MAG);
 % Save other useful variables
 assignin('base', 'catalogue_eci', catalogue_eci);
 assignin('base', 'catalogue_geo', catalogue_geo);
-assignin('base', 'catalogue_geo_delayed', catalogue_geo_delayed);  % NEW
 assignin('base', 'f_m', f_m);
 assignin('base', 'f_d', f_d);
 %---
@@ -558,11 +501,6 @@ assignin('base', 'R_MAG', R_MAG);
 %---
 
 fprintf('Simulation variables saved to base workspace.\n');
-if delay_ET_periods > 0
-    fprintf('Note: Both z_ET (current) and z_ET_delayed (used by filter) have been saved.\n');
-    fprintf('      Delay = %d ET period(s) = %.3f seconds = %d timesteps\n', ...
-            delay_ET_periods, delay_ET_periods * dt_ET, delay_ET_steps);
-end
 
 %% Clean up and show completion dialog
 % Update final message on progress dialog
