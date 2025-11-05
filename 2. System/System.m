@@ -203,7 +203,7 @@ drift_GYR   = zeros(n_GYR,1);                   % Gyroscope drift buffer
 
 % GPS
 n_GPS       = 3;                                % Number of measurements
-R_GPS       = diag([(noise_GPS/111)^2;(noise_GPS/111)^2;(noise_GPS/1000)^2]);
+R_GPS       = diag([(noise_GPS/111000)^2;(noise_GPS/111000)^2;(noise_GPS/1000)^2]);
 z_GPS       = zeros(n_GPS,n_s);                 % GPS measurement
 zhat_GPS    = zeros(n_GPS,n_s);                 % GPS estimated measurement
 y_GPS       = zeros(n_GPS,n_s);                 % GPS innovation
@@ -268,7 +268,7 @@ end
 
 %==========================================================================
 %% Run Simulation =========================================================
-for r = 1:n_s-1
+for r = 2:n_s
     drawnow; 
     % Stop simulation -----------------------------------------------------
     if ~app.SimulationRunning
@@ -284,8 +284,8 @@ for r = 1:n_s-1
     %----------------------------------------------------------------------
 
     % Earth Tracker Measurement -------------------------------------------
-    if mod(t-dt_ET,dt_ET) == 0 && enable_ET
-
+    if mod(t,dt_ET) == 0 && enable_ET
+     
         % Apply Lens Distortion -------------------------------------------
         distortedImage = LensDistortion(satelliteImage(:,:,:,r), ...
                 radialDisPar, tangentialDisPar, chromaticDisPar, ...
@@ -347,11 +347,14 @@ for r = 1:n_s-1
     % --------------------------------------------------------------------
 
     % EKF ---------------------------------------------------------------
+    % x_EKF(:,r-1) = [x_EKF(1:6,r-1);x_true(7:13,r-1)]; % Position
+    % x_EKF(:,r-1) = [x_true(1:6,r-1);x_EKF(7:13,r-1)]; % Attitude
+
     j = mod(t,dt_f);
     if j == 0
         % MODIFIED: Pass delayed measurements to the EKF
-        [x_EKF(:,r+1),              ...
-         P_EKF(:,:,r+1),            ...
+        [x_EKF(:,r),              ...
+         P_EKF(:,:,r),            ...
          zhat_ET(:,:,r), K_ET(:,:,:,r), H_ET(:,:,:,r), ...
          zhat_ST(:,:,r), K_ST(:,:,:,r), H_ST(:,:,:,r), ...
          zhat_CSS(:,r),  K_CSS(:,:,r),  H_CSS(:,:,r), ...
@@ -359,14 +362,14 @@ for r = 1:n_s-1
          zhat_GYR(:,r),  K_GYR(:,:,r),  H_GYR(:,:,r), ...
          zhat_GPS(:,r),  K_GPS(:,:,r),  H_GPS(:,:,r)   ] = EKF(      ...
          catalogue_geo_delayed(:,:,r), ... % Use delayed catalogue
-         x_EKF(:,r),                ...
-         P_EKF(:,:,r),              ...
+         x_EKF(:,r-1),                ...
+         P_EKF(:,:,r-1),              ...
          I_f,Q_EKF,dt_p,Mu_f,Re_f,J2_f,we_f,t, ...
          z_ET_delayed(:,:,r), z_ST(:,:,r), z_GPS(:,r), z_GYR(:,r), z_MAG(:,r), z_CSS(:,r), ... % Use delayed z_ET
          R_ET, R_ST, R_GPS, R_GYR, R_MAG, R_CSS);
     else
-        x_EKF(:,r+1) =  x_EKF(:,r);
-        P_EKF(:,:,r+1) =  P_EKF(:,:,r);
+        x_EKF(:,r) =  x_EKF(:,r-1);
+        P_EKF(:,:,r) =  P_EKF(:,:,r-1);
     end
     %----------------------------------------------------------------------
 
@@ -390,12 +393,12 @@ for r = 1:n_s-1
 
     % Progress bar --------------------------------------------------------
     elapsedTime = toc(startTime);
-    progress = r / (n_s-1);
+    progress = r / n_s;
     estTotalTime = elapsedTime / progress;
     estRemaining = estTotalTime - elapsedTime;
     d.Value = progress;
     d.Message = sprintf('Elapsed: %.2fs | %d%% | Est. remaining: %.2fs | Sample: %d | Footage Time: %.2fs | Time per sample: %.2fs', ...
-        elapsedTime, round(progress*100), estRemaining,r+1,r*dt_ET,elapsedTime/r);
+        elapsedTime, round(progress*100), estRemaining,r,t*dt_ET,elapsedTime/r);
     drawnow;  
     %----------------------------------------------------------------------
 
@@ -414,7 +417,7 @@ end
 wasStopped = ~app.SimulationRunning;
 
 % Trim arrays to actual size (remove unused pre-allocated space)
-actual_samples = r + 1;  % +1 because we have initial condition
+actual_samples = r;  % +1 because we have initial condition
 x_EKF           = x_EKF(:, 1:actual_samples);
 P_EKF           = P_EKF(:, :, 1:actual_samples);
 z_ET            = z_ET(:, :, 1:actual_samples);
@@ -604,3 +607,4 @@ if isvalid(app)
 end
 
 end
+

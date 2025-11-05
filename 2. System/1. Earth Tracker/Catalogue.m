@@ -63,8 +63,8 @@ T_O2I = [R_O2I         x_true(1:3);
 
 %=== T_I2R ============================================================
 theta = we_p * t;
-T_I2R = [cos(theta)    -sin(theta)    0 0;
-         sin(theta)     cos(theta)    0 0;
+T_I2R = [cos(theta)   -sin(theta)     0 0;
+         sin(theta)   cos(theta)      0 0;
          0              0             1 0;
          0              0             0 1];
 

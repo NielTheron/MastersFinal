@@ -3,7 +3,7 @@
 % 29-10-2025
 % Corrected Version with Earth Rotation Handling
 %==========================================================================
-function Image = GenerateSatelliteImage_RayTrace(r_I, v_I, q_O2B, imgWidth, imgHeight, focalLength, pixelSize, sourceMapFile, t, we)
+function Image = GenerateSatelliteImage_RayTrace(r_I, v_I, q_O2B, imgWidth, imgHeight, focalLength, pixelSize, sourceMapFile, t)
 % GenerateSatelliteImage_RayTrace_Corrected
 % Generates a simulated satellite image using ray-tracing with an 
 % ellipsoidal Earth model and PROPER Earth rotation handling.
@@ -106,10 +106,11 @@ if any(valid_pixels)
     intersect_eci = r_I + valid_rays .* valid_t;  % 3 x n_valid
 
     % Earth rotation
+    we = 7.2921159e-5;  % rad/s
     theta = we * t;
-    R_I2R = [cos(theta)   sin(theta)  0;
-            -sin(theta)    cos(theta)  0;
-             0            0           1];
+    R_I2R = [cos(theta)  sin(theta)  0;
+            -sin(theta)  cos(theta)  0;
+             0           0           1];
 
     intersect_ecef = R_I2R * intersect_eci;   % 3 x n_valid
 

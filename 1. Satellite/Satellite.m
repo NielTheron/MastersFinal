@@ -16,7 +16,7 @@ CleanFolders;
 
 %% Simulation Paramters ===================================================
 st      = 120;       % Simulation time (s)
-dt_p    = 1/30;      % Sample rate (s)
+dt_p    = 1/60;      % Sample rate (s)
 n_s     = round(st/dt_p); % Number of samples                      
 %---
 
@@ -41,7 +41,7 @@ lat_p       = -33.90;                   % Lattitude (deg)
 lon_p       = 18.41;                    % Longitude (deg)
 alt_p       = 500;                      % Altitude (km)
 rotx_p      = 0;                        % Satellite roll  Offset B/O (deg)
-roty_p      = 0.5;                        % Satellite Pitch Offset B/O (deg)
+roty_p      = 0;                        % Satellite Pitch Offset B/O (deg)
 rotz_p      = 0;                        % Satellite Yaw   Offset B/O (deg)
 wx_p        = 2;                        % Satellite Roll  rate B/O (deg/s)
 wy_p        = 0;                        % Satellite Pitch rate B/O (deg/s) 
@@ -132,9 +132,6 @@ d = uiprogressdlg(fig, 'Title','Running Simulation & Generating Images', ...
 startTime = tic;
 %==========================================================================
 
-x_true(:,2) = Plant(x_true(:,1), dt_p, I_p, Mu_p, Re_p, J2_p);
-m.poses(:,2) = x_true(:,1);
-
 currentImage = GenerateSatelliteImage_RayTrace( ...
     x_true(1:3,1), ...      % r_I (Position)
     x_true(4:6,1), ...      % v_I (Velocity)
@@ -144,7 +141,8 @@ currentImage = GenerateSatelliteImage_RayTrace( ...
     focalLength_cam, ...
     pixelSize_cam, ...
     sourceMapFile, ...
-    0);
+    0, ...
+    we_p);
 m.images(:,:,:,1) = currentImage;
 SaveSatelliteImages(currentImage,1);
 
@@ -153,12 +151,12 @@ SaveSatelliteImages(currentImage,1);
 for r = 2:n_s
 
     % Time ----------------------------------------------------------------
-    t = r*dt_p;
+    t = (r-1)*dt_p;
     %----------------------------------------------------------------------
 
     % Plant Propagation (in local memory) ---------------------------------
-    x_true(:,r+1) = Plant(x_true(:,r), dt_p, I_p, Mu_p, Re_p, J2_p);
-    m.poses(:,r+1) = x_true(:,r+1);
+    x_true(:,r) = Plant(x_true(:,r-1), dt_p, I_p, Mu_p, Re_p, J2_p);
+    m.poses(:,r) = x_true(:,r);
     %----------------------------------------------------------------------
 
     % Image Generator -----------------------------------------------------
@@ -171,7 +169,8 @@ for r = 2:n_s
         focalLength_cam, ...
         pixelSize_cam, ...
         sourceMapFile, ...
-        t);
+        t, ...
+        we_p);
     
     m.images(:,:,:,r) = currentImage;
     SaveSatelliteImages(currentImage,r);
@@ -179,7 +178,7 @@ for r = 2:n_s
 
     % Progress bar --------------------------------------------------------
     elapsedTime = toc(startTime);
-    progress = r / (n_s-1);
+    progress = r / n_s;
     estTotalTime = elapsedTime / progress;
     estRemaining = estTotalTime - elapsedTime;
     d.Value = progress;

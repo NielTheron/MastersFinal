@@ -16,7 +16,7 @@ zhat_GPS = R_I2R * x_est(1:3);
 %==========================================================================
 
 %=== Convert to Latitude, Longitude, Altitude (degrees and km) ============
-wgs84 = wgs84Ellipsoid("kilometers"); % use meters for consistency
+wgs84 = wgs84Ellipsoid("kilometers");
 [lat, lon, alt] = ecef2geodetic(wgs84, ...
     zhat_GPS(1), zhat_GPS(2), zhat_GPS(3), "degrees");
 

@@ -9,7 +9,7 @@
 function CleanFolders()
 
     % Clear feature Images
-    folderPath = 'C:\Users\Niel\Desktop\1. Masters\2. System\1. Earth Tracker\FeatureImages';
+    folderPath = 'C:\Users\Niel\Desktop\Masters\2. System\1. Earth Tracker\FeatureImages';
     if exist(folderPath, 'dir')
     rmdir(folderPath, 's'); % 's' option removes the directory and all its contents
     end
@@ -18,7 +18,7 @@ function CleanFolders()
     %---
 
     % Clear feature Images
-    folderPath = 'C:\Users\Niel\Desktop\1. Masters\2. System\1. Earth Tracker\SatelliteImages';
+    folderPath = 'C:\Users\Niel\Desktop\Masters\2. System\1. Earth Tracker\SatelliteImages';
     if exist(folderPath, 'dir')
     rmdir(folderPath, 's'); % 's' option removes the directory and all its contents
     end
@@ -28,7 +28,7 @@ function CleanFolders()
 
 
     % Clear feature Images
-    folderPath = 'C:\Users\Niel\Desktop\1. Masters\2. System\1. Earth Tracker\DistortedImages';
+    folderPath = 'C:\Users\Niel\Desktop\Masters\2. System\1. Earth Tracker\DistortedImages';
     if exist(folderPath, 'dir')
     rmdir(folderPath, 's'); % 's' option removes the directory and all its contents
     end
@@ -38,7 +38,7 @@ function CleanFolders()
 
 
     % Clear Estimated Images
-    folderPath = 'C:\Users\Niel\Desktop\1. Masters\2. System\1. Earth Tracker\EstimatedImages';
+    folderPath = 'C:\Users\Niel\Desktop\Masters\2. System\1. Earth Tracker\EstimatedImages';
     if exist(folderPath, 'dir')
     rmdir(folderPath, 's'); % 's' option removes the directory and all its contents
     end

@@ -1,5 +1,4 @@
-function Ploty_GPS(y_GPS,time)
-
+function Ploty_GPS(y_GPS, time)
 
 figure('Name', 'GPS Error', 'NumberTitle', 'off')
 
@@ -11,14 +10,19 @@ for i = 1:3
     valid = any(y_GPS ~= 0, 1);  % True if any axis has a nonzero value
 
     % Filter data
-    t_valid     = time(valid);
-    y_valid     = y_GPS(i, valid);
+    t_valid = time(valid);
+    y_valid = y_GPS(i, valid);
 
     % Plot only valid data
     scatter(t_valid, y_valid, 'k', 'LineWidth', 1.2);
 
     xlabel('Time (s)');
-    ylabel('Distance (km/deg)');
+    if i <= 2
+        ylabel('Degrees');
+    else
+        ylabel('Kilometers');
+    end
+
     title(sprintf('GPS Measurement (Axis %d)', i));
     legend('Error', 'Location', 'best');
     grid on;
