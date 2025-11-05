@@ -17,7 +17,7 @@ f = [fx;fy;fz;1];
 %=== T_R2I ================================================================
 
 theta = we * t;
-T_R2I = [cos(theta)    sin(theta)    0 0;
+T_R2I = [cos(theta)   sin(theta)     0 0;
          -sin(theta)   cos(theta)    0 0;
          0              0            1 0;
          0              0            0 1];

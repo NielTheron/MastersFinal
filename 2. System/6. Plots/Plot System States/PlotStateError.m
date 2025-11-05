@@ -1,6 +1,7 @@
 function PlotStateError(x_true, x_est, dt)
 figure('Name','State Error')
 n = (0:size(x_est,2)-1) * dt;
+d = size(x_est,2);
 
 tiledlayout(2,2)
 
@@ -8,9 +9,9 @@ tiledlayout(2,2)
 % POSITION ERROR
 nexttile
 hold on
-stairs(n,(x_true(1,:) - x_est(1,:)) * 1000)
-stairs(n,(x_true(2,:) - x_est(2,:)) * 1000)
-stairs(n,(x_true(3,:) - x_est(3,:)) * 1000)
+stairs(n,(x_true(1,1:d) - x_est(1,:)) * 1000)
+stairs(n,(x_true(2,1:d) - x_est(2,:)) * 1000)
+stairs(n,(x_true(3,1:d) - x_est(3,:)) * 1000)
 title('Position Error')
 xlabel('Time (s)')
 ylabel('Position (ECI) (m)')
@@ -21,9 +22,9 @@ hold off
 % VELOCITY ERROR
 nexttile
 hold on
-stairs(n,(x_true(4,:) - x_est(4,:)) * 1000)
-stairs(n,(x_true(5,:) - x_est(5,:)) * 1000)
-stairs(n,(x_true(6,:) - x_est(6,:)) * 1000)
+stairs(n,(x_true(4,1:d) - x_est(4,:)) * 1000)
+stairs(n,(x_true(5,1:d) - x_est(5,:)) * 1000)
+stairs(n,(x_true(6,1:d) - x_est(6,:)) * 1000)
 title('Velocity Error')
 xlabel('Time (s)')
 ylabel('Velocity (ECI) (m/s)')
@@ -34,7 +35,7 @@ hold off
 % ATTITUDE ERROR (Quaternion Angle Difference)
 nexttile
 hold on
-angular_error = zeros(1, length(n));
+angular_error = zeros(1, d);
 
 for k = 1:length(n)
     q_true = x_true(7:10, k);
@@ -66,9 +67,9 @@ hold off
 % ANGULAR VELOCITY ERROR
 nexttile
 hold on
-stairs(n, rad2deg(x_true(11,:) - x_est(11,:)))
-stairs(n, rad2deg(x_true(12,:) - x_est(12,:)))
-stairs(n, rad2deg(x_true(13,:) - x_est(13,:)))
+stairs(n, rad2deg(x_true(11,1:d) - x_est(11,:)))
+stairs(n, rad2deg(x_true(12,1:d) - x_est(12,:)))
+stairs(n, rad2deg(x_true(13,1:d) - x_est(13,:)))
 title('Angular Velocity Error')
 xlabel('Time (s)')
 ylabel('Angular Velocity (deg/s)')

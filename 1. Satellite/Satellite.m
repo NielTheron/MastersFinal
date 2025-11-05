@@ -16,7 +16,7 @@ CleanFolders;
 
 %% Simulation Paramters ===================================================
 st      = 120;       % Simulation time (s)
-dt_p    = 1/60;      % Sample rate (s)
+dt_p    = 1;         % Sample rate (s)
 n_s     = round(st/dt_p); % Number of samples                      
 %---
 

@@ -107,8 +107,8 @@ if any(valid_pixels)
 
     % Earth rotation
     theta = we * t;
-    R_I2R = [cos(theta)   sin(theta)  0;
-            -sin(theta)    cos(theta)  0;
+    R_I2R = [cos(theta)    sin(theta)  0;
+             -sin(theta)   cos(theta)  0;
              0            0           1];
 
     intersect_ecef = R_I2R * intersect_eci;   % 3 x n_valid
