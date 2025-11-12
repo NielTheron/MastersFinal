@@ -350,7 +350,7 @@ for r = 2:n_s
     
     % Position
     % x_EKF(:,r-1) = [x_EKF(1:6,r-1);x_true(7:13,r-1)]; 
-    % P_EKF(:,:, r-1) = [P_EKF(6:6,6:6,r-1), zeros(6,7); zeros(7,6); zeros(7,7), ];  
+    % P_EKF(:,:, r-1) = [P_EKF(1:6,1:6,r-1), zeros(6,7); zeros(7,6), zeros(7,7)];  
 
     % Attitude
     % x_EKF(:,r-1) = [x_true(1:6,r-1);x_EKF(7:13,r-1)]; 
